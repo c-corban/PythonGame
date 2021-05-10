@@ -15,7 +15,7 @@ except socket.error as errMsg:
     str(errMsg)
 
 s.listen(1)
-print("Astept conexiuni")
+print("Waiting for connections")
 
 games = {}
 idCount = 0
@@ -68,14 +68,14 @@ def clientThread(connection, playerNumber, gameId):
 
         except: break
 
-    print("Pierdut conexiunea:",address)
+    print("Lost connection",address)
     games[gameId].ai[playerNumber] = True
     #print((gameId,games[gameId].ai))
 
     if False not in games[gameId].ai:
         try:
             del games[gameId]
-            print("Inchid jocul:", gameId)
+            print("Closing Game", gameId)
         except:
             pass
 
@@ -85,7 +85,7 @@ def clientThread(connection, playerNumber, gameId):
 
 while True:
     connection, address = s.accept()
-    print("Conectat la:", address)
+    print("Connected to:", address)
 
     playerNumber = idCount % 4
     idCount += 1
@@ -94,18 +94,19 @@ while True:
     if idCount % 4 == 1 and gameId not in games:
         games[gameId] = Game(gameId)
         #print((gameId,games[gameId].ai))
-        print("Creez jocul:",gameId)
+        print("Creating a new game.",gameId)
 
     else:
-        print("Asignez jocului:", gameId)
-        #games[gameId].ready = True
-        for i in range(len(games[gameId].ai)):
-            if games[gameId].ai[i]:
-                playerNumber = i
-                break
+        for game in range(gameId):
+            for aiControled in range(len(games[game].ai)):
+                if games[game].ai[aiControled]:
+                    playerNumber = aiControled
+                    gameId = game
+                    break
+        print("Joining game", gameId)
 
         games[gameId].ai[playerNumber] = False
         #print((gameId,games[gameId].ai))
 
-
+    #print(playerNumber, gameId)
     start_new_thread(clientThread, (connection, playerNumber, gameId))

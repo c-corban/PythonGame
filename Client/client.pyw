@@ -34,7 +34,7 @@ size = (width,height) = (900,700)
 background = (0,0,0)
 
 window = pygame.display.set_mode(size)
-pygame.display.set_caption("WIP")
+pygame.display.set_caption("Better Together")
 
 
 def refresh(window, playerMe, playerOthers):
