@@ -1,11 +1,15 @@
 from player import Player
+import random
 
 class Game:
     def __init__(self, id):
         self.id = id
-        self.ai = [False,True,True,True]
-        self.players = [Player(300,400,48,64,'captain-m-001-light'), Player(358,400, 48,64, 'pirate-m-001-light'), Player(416,400, 48,64, 'pirate-m-003-light-alt'), Player(474,400, 48,64, 'pirate-m-004-light')]
-        #self.players = [1,2,3,4]
+        self.ai = [True,True,True,True]
+
+        characters=['captain-m-001-light','pirate-m-001-light','pirate-m-003-light-alt','pirate-m-004-light']
+        random.shuffle(characters)
+        self.players = [Player(480,800,48,64,characters[0]), Player(576,800, 48,64, characters[1]), Player(722,800, 48,64, characters[2]), Player(818,800, 48,64, characters[3])]
+
 
     def get_player(self, playerNumber):
         if self.ai[playerNumber] == True:

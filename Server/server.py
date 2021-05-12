@@ -18,7 +18,6 @@ s.listen(1)
 print("Waiting for connections")
 
 games = {}
-idCount = 0
 
 def aiMove(gameId):
     for i in range(len(games[gameId].ai)):
@@ -41,7 +40,6 @@ def aiMove(gameId):
 
 
 def clientThread(connection, playerNumber, gameId):
-    global idCount
 
     # Send player object
     connection.send(pickle.dumps(games[gameId].players[playerNumber]))
@@ -52,7 +50,6 @@ def clientThread(connection, playerNumber, gameId):
             data = pickle.loads(connection.recv(buffer))
             if not data: break
 
-            #else:
             # Reply others move
             games[gameId].players[playerNumber] = data
             aiMove(gameId)
@@ -70,16 +67,15 @@ def clientThread(connection, playerNumber, gameId):
 
     print("Lost connection",address)
     games[gameId].ai[playerNumber] = True
-    #print((gameId,games[gameId].ai))
 
     if False not in games[gameId].ai:
         try:
             del games[gameId]
             print("Closing Game", gameId)
+
         except:
             pass
 
-    idCount -= 1
     connection.close()
 
 
@@ -87,26 +83,39 @@ while True:
     connection, address = s.accept()
     print("Connected to:", address)
 
-    playerNumber = idCount % 4
-    idCount += 1
-    gameId = (idCount - 1) // 4
+    found = False
+    for game in games:
+        if not found:
+            for aiControlled in range(len(games[game].ai)):
+                if games[game].ai[aiControlled]:
+                    found = True
+                    playerNumber = aiControlled
+                    gameId = game
 
-    if idCount % 4 == 1 and gameId not in games:
-        games[gameId] = Game(gameId)
-        #print((gameId,games[gameId].ai))
+                    print("Joining game", gameId)
+
+                    games[gameId].ai[playerNumber] = False
+                    break
+    if not found:
+        if games:
+            recentlyClosed = None
+            maxGameId = max(games.keys())
+            gameFound=False
+            for recentlyClosed in range(1,maxGameId+1):
+                if recentlyClosed-1 not in games:
+                    gameFound=True
+                    gameId = recentlyClosed-1
+                    break
+
+            if not gameFound:
+                gameId = maxGameId + 1
+        else:
+            gameId = 0
+
         print("Creating a new game.",gameId)
 
-    else:
-        for game in range(gameId):
-            for aiControled in range(len(games[game].ai)):
-                if games[game].ai[aiControled]:
-                    playerNumber = aiControled
-                    gameId = game
-                    break
-        print("Joining game", gameId)
+        games[gameId] = Game(gameId)
+        playerNumber = 0
+        games[gameId].ai[0] = False
 
-        games[gameId].ai[playerNumber] = False
-        #print((gameId,games[gameId].ai))
-
-    #print(playerNumber, gameId)
     start_new_thread(clientThread, (connection, playerNumber, gameId))
