@@ -1,6 +1,5 @@
-import socket
+import socket, pickle, random
 from _thread import *
-import pickle, random
 from game import Game
 
 server = (ip, port) = ("localhost", 2911)
@@ -19,10 +18,14 @@ print("Waiting for connections")
 
 games = {}
 
-def aiMove(gameId):
+def aiMove(gameId): # work in progress
     for i in range(len(games[gameId].ai)):
         if games[gameId].ai[i]:
             direction = random.randrange(1,5)
+
+            #games[gameId].play(i,(x, y, width, height, list([(24*frame,64,24,32) for frame in range(3)])[1])
+            #game.aiMove(gameId, i, (x,y)))
+
 
             if direction == 1 and games[gameId].players[i].y + games[gameId].players[i].velocity > 0:
                 games[gameId].players[i].y -= games[gameId].players[i].velocity
