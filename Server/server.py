@@ -21,7 +21,7 @@ games = {}
 def aiMove(gameId): # work in progress
     for i in range(len(games[gameId].ai)):
         if games[gameId].ai[i]:
-            direction = random.randrange(1,5)
+            direction = random.randrange(1,11)
 
             #games[gameId].play(i,(x, y, width, height, list([(24*frame,64,24,32) for frame in range(3)])[1])
             #game.aiMove(gameId, i, (x,y)))
@@ -55,7 +55,7 @@ def clientThread(connection, playerNumber, gameId):
 
             # Reply others move
             games[gameId].players[playerNumber] = data
-            aiMove(gameId)
+            #aiMove(gameId) # work in progress
             for i in range(len(games[gameId].players)):
                 if i != playerNumber:
                     reply.append(games[gameId].players[i])
@@ -68,7 +68,7 @@ def clientThread(connection, playerNumber, gameId):
 
         except: break
 
-    print("Lost connection",address)
+    print("Lost connection", address)
     games[gameId].ai[playerNumber] = True
 
     if False not in games[gameId].ai:
@@ -87,6 +87,8 @@ while True:
     print("Connected to:", address)
 
     found = False
+
+    # Search for a game to join
     for game in games:
         if not found:
             for aiControlled in range(len(games[game].ai)):
@@ -99,23 +101,26 @@ while True:
 
                     games[gameId].ai[playerNumber] = False
                     break
+
+    # Reopen a game
     if not found:
         if games:
             recentlyClosed = None
             maxGameId = max(games.keys())
-            gameFound=False
-            for recentlyClosed in range(1,maxGameId+1):
+            gameFound = False
+            for recentlyClosed in range(1, maxGameId+1):
                 if recentlyClosed-1 not in games:
-                    gameFound=True
+                    gameFound = True
                     gameId = recentlyClosed-1
                     break
 
+            # Create a new game
             if not gameFound:
                 gameId = maxGameId + 1
         else:
             gameId = 0
 
-        print("Creating a new game.",gameId)
+        print("Creating a new game.", gameId)
 
         games[gameId] = Game(gameId)
         playerNumber = 0
