@@ -1,2 +1,2 @@
 import os
-os.system('python ../Server/server.py')
+os.system('python ' + os.path.join('..', 'Server', 'server.py'))
