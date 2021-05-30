@@ -52,8 +52,8 @@ class Player():
 
         #window.blit(pygame.image.load(os.path.join('..', 'Img', 'resized wood plank.png')).convert(),(10, 20))
 
-        woodSurface.blit(pygame.transform.scale(pygame.image.load(os.path.join('..', 'Img', 'wood plank.png')).convert(), (40, 40)), (0,0))
-        cannonSurface.blit(pygame.transform.scale(pygame.image.load(os.path.join('..', 'Img', 'cannonball.png')).convert(), (40, 40)), (0,0))
+        woodSurface.blit(pygame.image.load(os.path.join('..', 'Img', 'wood plank.png')).convert_alpha(), (0, 0))
+        cannonSurface.blit(pygame.image.load(os.path.join('..', 'Img', 'cannonball.png')).convert_alpha(), (0, 0))
 
 
         window.blit(woodSurface, (10,20))
