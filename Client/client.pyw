@@ -30,8 +30,8 @@ size = (width, height) = (1280, 960)
 window = pygame.display.set_mode(size)
 pygame.display.set_caption("Better Together")
 
-ship = pygame.transform.scale(pygame.image.load(os.path.join('..', 'Img', 'ocean_e_new_ship_small.png')).convert(), (width//2, height)) #(825, 750)
-water = pygame.transform.scale(pygame.image.load(os.path.join('..', 'Img', 'water.png')).convert(), (width, height))
+ship = pygame.transform.scale(pygame.image.load(os.path.join('Img', 'ocean_e_new_ship_small.png')).convert(), (width//2, height)) #(825, 750)
+water = pygame.transform.scale(pygame.image.load(os.path.join('Img', 'water.png')).convert(), (width, height))
 
 
 def refresh(window, playerMe, playerOthers):

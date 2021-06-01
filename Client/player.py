@@ -21,7 +21,7 @@ class Player():
         cropped = pygame.Surface([24,32], pygame.SRCALPHA, 32)
         cropped.blit(playerImg, (0,3*32//4), list([(24*frame, 64+3*32//4, 24, 32//4) for frame in range(3)])[1])
 
-        obstacle = pygame.transform.scale(pygame.image.load(os.path.join('..', 'Img', 'obstacle.png')).convert_alpha(), (self.maxWidth//2, self.maxHeight))
+        obstacle = pygame.transform.scale(pygame.image.load(os.path.join('Img', 'obstacle.png')).convert_alpha(), (self.maxWidth//2, self.maxHeight))
 
         movingObjectMask = pygame.mask.from_surface(cropped)
         obstacleMask = pygame.mask.from_surface(obstacle)
@@ -38,11 +38,9 @@ class Player():
 
     def draw(self, window):
 
-        playerImg = pygame.image.load(os.path.join('..', 'Img', 'players', '24x32', '{}.png'.format(self.char))).convert_alpha()
+        playerImg = pygame.image.load(self.char).convert_alpha()
 
         window.blit(playerImg,(self.x,self.y),self.animation)
-
-        #window.blit(playerImg, (0,3*32//4), list([(24*frame, 64+1*32//4, 24, 32//4) for frame in range(3)])[1])
 
         font = pygame.font.SysFont(None, 64)
 
@@ -50,10 +48,8 @@ class Player():
         cannonSurface = pygame.Surface([40,40], pygame.SRCALPHA, 32)
 
 
-        #window.blit(pygame.image.load(os.path.join('..', 'Img', 'resized wood plank.png')).convert(),(10, 20))
-
-        woodSurface.blit(pygame.image.load(os.path.join('..', 'Img', 'wood plank.png')).convert_alpha(), (0, 0))
-        cannonSurface.blit(pygame.image.load(os.path.join('..', 'Img', 'cannonball.png')).convert_alpha(), (0, 0))
+        woodSurface.blit(pygame.image.load(os.path.join('Img', 'wood plank.png')).convert_alpha(), (0, 0))
+        cannonSurface.blit(pygame.image.load(os.path.join('Img', 'cannonball.png')).convert_alpha(), (0, 0))
 
 
         window.blit(woodSurface, (10,20))
@@ -63,7 +59,7 @@ class Player():
         window.blit(font.render("{}".format(self.inventoryCannon), True, (0,0,0)), (60, 70))
 
     def move(self):
-        playerImg = pygame.image.load(os.path.join('..', 'Img', 'players', '24x32', '{}.png'.format(self.char))).convert_alpha()
+        playerImg = pygame.image.load(self.char).convert_alpha()
 
         keys = pygame.key.get_pressed()
         if self.frame >= 56:
