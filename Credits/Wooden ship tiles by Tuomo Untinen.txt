@@ -1,0 +1,12 @@
+Credit: Reemax & AntumDeluge
+
+
+Wooden sailing ship tiles. Contains main ship parts, including round window, front and back deck, helm, lifebuoy, possiblity to make cabins on deck and stairs.
+
+Notice that preview image has LPC water which is under CC-BY-SA and GPL license. Water tile by Sharm aka Lanea Zimmerman. Ship tiles are all made by Tuomo Untinen
+
+Copyright/Attribution Notice: 
+Wooden ship tiles by Tuomo Untinen
+
+
+Taken from: https://opengameart.org/content/lpc-wooden-ship-tiles

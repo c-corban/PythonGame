@@ -21,7 +21,7 @@ class Player():
         cropped = pygame.Surface([24,32], pygame.SRCALPHA, 32)
         cropped.blit(playerImg, (0,3*32//4), list([(24*frame, 64+3*32//4, 24, 32//4) for frame in range(3)])[1])
 
-        obstacle = pygame.transform.scale(pygame.image.load(os.path.join('Img', 'obstacle.png')).convert_alpha(), (self.maxWidth//2, self.maxHeight))
+        obstacle = pygame.transform.scale(pygame.image.load(os.path.join('Images', 'obstacle.png')).convert_alpha(), (self.maxWidth//2, self.maxHeight))
 
         movingObjectMask = pygame.mask.from_surface(cropped)
         obstacleMask = pygame.mask.from_surface(obstacle)
@@ -48,8 +48,8 @@ class Player():
         cannonSurface = pygame.Surface([40,40], pygame.SRCALPHA, 32)
 
 
-        woodSurface.blit(pygame.image.load(os.path.join('Img', 'wood plank.png')).convert_alpha(), (0, 0))
-        cannonSurface.blit(pygame.image.load(os.path.join('Img', 'cannonball.png')).convert_alpha(), (0, 0))
+        woodSurface.blit(pygame.image.load(os.path.join('Images', 'wood plank.png')).convert_alpha(), (0, 0))
+        cannonSurface.blit(pygame.image.load(os.path.join('Images', 'cannonball.png')).convert_alpha(), (0, 0))
 
 
         window.blit(woodSurface, (10,20))

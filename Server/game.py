@@ -9,15 +9,15 @@ class Game:
 
         characters = ['captain-m-001-light', 'pirate-m-001-light', 'pirate-m-003-light-alt', 'pirate-m-004-light']
         for i in range(len(characters)):
-            characters[i] = os.path.join('Img', 'players', '24x32', '{}.png'.format(characters[i]))
+            characters[i] = os.path.join('Images', 'players', '24x32', '{}.png'.format(characters[i]))
 
         random.shuffle(characters)
         self.players = [Player(480, 800, 48, 64, characters[0]), Player(576, 800, 48, 64, characters[1]), Player(722, 800, 48, 64, characters[2]), Player(818, 800, 48, 64, characters[3])]
 
         # TO DO: Pirate ship AI
 
-        self.pirateShips.append(Player(0,0,549,549,os.path.join('Img', 'Black Sail', 'pirate_ship_00000.png')))
-        
+        self.pirateShips.append(Player(0,0,549,549,os.path.join('Images', 'Black Sail', 'pirate_ship_00000.png')))
+
         for ship in self.pirateShips:
             ship.animation = None
             self.players.append(ship)

@@ -1,0 +1,13 @@
+Un joc multiplayer cooperativ de 4 jucatori in care acestia incearca sa se organizeze si sa indeplineasca obiective, prioritizand sarcinile.
+
+Slaba organizare sau prioritazarea gresita a sarcinilor va duce la pierderea jocului.
+
+Un jucator va avea de ales intre a ajuta un alt jucator intr-o sarcina (completand astfel mai rapid sarcina) sau sa inceapa alta sarcina.
+
+Pe parcusul jocului vor aparea noi tipuri de sarcini, unele necesitand urgenta atentie a jucatorilor (ignorarea acestora duce la pierdere) punand astfel presiune asupra jucatorilor.
+
+Supravietuirea unui timp fixat va duce automat la victorie.
+
+
+Un meci incepe cu 4 jucatori, la momentul deconectarii unuia dintre ei, calculatorul ii va lua locul (in functie de numarul de jucatori conectati strategia calculatorului va fi mai puternica, daca numarul este mic, sau mai slaba) pana cand alt jucator se va conecta.
+Daca intr-un meci nu este niciun jucator controlat de calculator, la momentul conectarii unui client, se va crea un alt meci care se va juca in paralel, creand astfel locuri pentru viitori jucatori.
