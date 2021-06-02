@@ -18,33 +18,15 @@ print("Waiting for connections")
 
 games = {}
 
+
 def aiMove(gameId): # work in progress
     for i in range(len(games[gameId].ai)):
         if games[gameId].ai[i]:
-            games[gameId].pirateShips[i].frame = random.randrange(1,11)
-
-            #games[gameId].play(i,(x, y, width, height, list([(24*frame,64,24,32) for frame in range(3)])[1])
-            #game.aiMove(gameId, i, (x,y)))
-
-
-            if games[gameId].pirateShips[i].frame == 1 and games[gameId].players[i].y + games[gameId].players[i].velocity > 0:
-                games[gameId].players[i].y -= games[gameId].players[i].velocity
-
-            if games[gameId].pirateShips[i].frame == 2 and games[gameId].players[i].x + games[gameId].players[i].velocity > 0:
-                games[gameId].players[i].x -= games[gameId].players[i].velocity
-
-            if games[gameId].pirateShips[i].frame == 3 and games[gameId].players[i].y + games[gameId].players[i].height - games[gameId].players[i].velocity < games[gameId].players[i].maxHeight:
-                games[gameId].players[i].y += games[gameId].players[i].velocity
-
-            if games[gameId].pirateShips[i].frame == 4 and games[gameId].players[i].x + games[gameId].players[i].width - games[gameId].players[i].velocity < games[gameId].players[i].maxWidth:
-                games[gameId].players[i].x += games[gameId].players[i].velocity
-
-            games[gameId].players[i].player = (games[gameId].players[i].x, games[gameId].players[i].y, games[gameId].players[i].width, games[gameId].players[i].height)
+            direction = random.randrange(1,11)
 
 
 def shipAi(gameId):
     for i in range(len(games[gameId].pirateShips)):
-
 
         if not random.randrange(60) % 20:
             games[gameId].pirateShips[i].increment = random.randrange(-1,2)
@@ -57,8 +39,6 @@ def shipAi(gameId):
             games[gameId].pirateShips[i].frame = 0
         else:
             games[gameId].pirateShips[i].frame += games[gameId].pirateShips[i].increment
-
-
 
         games[gameId].pirateShips[i].char = os.path.join('Images', 'Black Sail', 'pirate_ship_{}0000.png'.format(games[gameId].pirateShips[i].frame))
 
