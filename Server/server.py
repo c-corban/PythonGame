@@ -1,4 +1,4 @@
-import socket, pickle, random
+import socket, pickle, random, os
 from _thread import *
 from game import Game
 
@@ -21,25 +21,152 @@ games = {}
 def aiMove(gameId): # work in progress
     for i in range(len(games[gameId].ai)):
         if games[gameId].ai[i]:
-            direction = random.randrange(1,11)
+            games[gameId].pirateShips[i].frame = random.randrange(1,11)
 
             #games[gameId].play(i,(x, y, width, height, list([(24*frame,64,24,32) for frame in range(3)])[1])
             #game.aiMove(gameId, i, (x,y)))
 
 
-            if direction == 1 and games[gameId].players[i].y + games[gameId].players[i].velocity > 0:
+            if games[gameId].pirateShips[i].frame == 1 and games[gameId].players[i].y + games[gameId].players[i].velocity > 0:
                 games[gameId].players[i].y -= games[gameId].players[i].velocity
 
-            if direction == 2 and games[gameId].players[i].x + games[gameId].players[i].velocity > 0:
+            if games[gameId].pirateShips[i].frame == 2 and games[gameId].players[i].x + games[gameId].players[i].velocity > 0:
                 games[gameId].players[i].x -= games[gameId].players[i].velocity
 
-            if direction == 3 and games[gameId].players[i].y + games[gameId].players[i].height - games[gameId].players[i].velocity < games[gameId].players[i].maxHeight:
+            if games[gameId].pirateShips[i].frame == 3 and games[gameId].players[i].y + games[gameId].players[i].height - games[gameId].players[i].velocity < games[gameId].players[i].maxHeight:
                 games[gameId].players[i].y += games[gameId].players[i].velocity
 
-            if direction == 4 and games[gameId].players[i].x + games[gameId].players[i].width - games[gameId].players[i].velocity < games[gameId].players[i].maxWidth:
+            if games[gameId].pirateShips[i].frame == 4 and games[gameId].players[i].x + games[gameId].players[i].width - games[gameId].players[i].velocity < games[gameId].players[i].maxWidth:
                 games[gameId].players[i].x += games[gameId].players[i].velocity
 
             games[gameId].players[i].player = (games[gameId].players[i].x, games[gameId].players[i].y, games[gameId].players[i].width, games[gameId].players[i].height)
+
+
+def shipAi(gameId):
+    for i in range(len(games[gameId].pirateShips)):
+
+
+        if not random.randrange(60) % 20:
+            games[gameId].pirateShips[i].increment = random.randrange(-1,2)
+        elif random.randrange(60) % 20:
+            games[gameId].pirateShips[i].increment = 0
+
+        if games[gameId].pirateShips[i].frame == 0 and games[gameId].pirateShips[i].increment == -1:
+            games[gameId].pirateShips[i].frame = 15
+        elif games[gameId].pirateShips[i].frame == 15 and games[gameId].pirateShips[i].increment == 1:
+            games[gameId].pirateShips[i].frame = 0
+        else:
+            games[gameId].pirateShips[i].frame += games[gameId].pirateShips[i].increment
+
+
+
+        games[gameId].pirateShips[i].char = os.path.join('Images', 'Black Sail', 'pirate_ship_{}0000.png'.format(games[gameId].pirateShips[i].frame))
+
+        if not random.randrange(60) % 12:
+            break
+
+        # down
+        if games[gameId].pirateShips[i].frame == 0:
+            if games[gameId].pirateShips[i].y - games[gameId].pirateShips[i].velocity < games[gameId].pirateShips[i].maxHeight:
+                games[gameId].pirateShips[i].y += games[gameId].pirateShips[i].velocity
+
+        # down right
+        if games[gameId].pirateShips[i].y - games[gameId].pirateShips[i].velocity < games[gameId].pirateShips[i].maxHeight and games[gameId].pirateShips[i].x - games[gameId].pirateShips[i].velocity < games[gameId].pirateShips[i].maxWidth:
+            if games[gameId].pirateShips[i].frame == 1:
+                games[gameId].pirateShips[i].x += games[gameId].pirateShips[i].velocity//2
+                games[gameId].pirateShips[i].y += games[gameId].pirateShips[i].velocity
+
+            if games[gameId].pirateShips[i].frame == 2:
+                games[gameId].pirateShips[i].x += games[gameId].pirateShips[i].velocity
+                games[gameId].pirateShips[i].y += games[gameId].pirateShips[i].velocity
+
+            if games[gameId].pirateShips[i].frame == 3:
+                games[gameId].pirateShips[i].x += games[gameId].pirateShips[i].velocity
+                games[gameId].pirateShips[i].y += games[gameId].pirateShips[i].velocity//2
+        else:
+            if games[gameId].pirateShips[i].frame == 1:
+                games[gameId].pirateShips[i].frame = 9
+            if games[gameId].pirateShips[i].frame == 2:
+                games[gameId].pirateShips[i].frame = 10
+            if games[gameId].pirateShips[i].frame == 3:
+                games[gameId].pirateShips[i].frame = 11
+
+        # right
+        if games[gameId].pirateShips[i].frame == 4:
+            if games[gameId].pirateShips[i].x - games[gameId].pirateShips[i].velocity < games[gameId].pirateShips[i].maxWidth:
+                games[gameId].pirateShips[i].x += games[gameId].pirateShips[i].velocity
+
+        # right up
+        if games[gameId].pirateShips[i].x - games[gameId].pirateShips[i].velocity < games[gameId].pirateShips[i].maxWidth and games[gameId].pirateShips[i].y + games[gameId].pirateShips[i].velocity > -300:
+            if games[gameId].pirateShips[i].frame == 5:
+                games[gameId].pirateShips[i].x += games[gameId].pirateShips[i].velocity
+                games[gameId].pirateShips[i].y -= games[gameId].pirateShips[i].velocity//2
+
+            if games[gameId].pirateShips[i].frame == 6:
+                games[gameId].pirateShips[i].x += games[gameId].pirateShips[i].velocity
+                games[gameId].pirateShips[i].y -= games[gameId].pirateShips[i].velocity
+
+            if games[gameId].pirateShips[i].frame == 7:
+                games[gameId].pirateShips[i].x += games[gameId].pirateShips[i].velocity//2
+                games[gameId].pirateShips[i].y -= games[gameId].pirateShips[i].velocity
+        else:
+            if games[gameId].pirateShips[i].frame == 5:
+                games[gameId].pirateShips[i].frame = 13
+            if games[gameId].pirateShips[i].frame == 6:
+                games[gameId].pirateShips[i].frame = 14
+            if games[gameId].pirateShips[i].frame == 7:
+                games[gameId].pirateShips[i].frame = 15
+
+        # up
+        if games[gameId].pirateShips[i].frame == 8:
+            if games[gameId].pirateShips[i].y + games[gameId].pirateShips[i].velocity > -300:
+                games[gameId].pirateShips[i].y -= games[gameId].pirateShips[i].velocity
+
+        # up left
+        if games[gameId].pirateShips[i].y + games[gameId].pirateShips[i].velocity > -300 and games[gameId].pirateShips[i].x + games[gameId].pirateShips[i].velocity > -300:
+            if games[gameId].pirateShips[i].frame == 9:
+                games[gameId].pirateShips[i].x -= games[gameId].pirateShips[i].velocity//2
+                games[gameId].pirateShips[i].y -= games[gameId].pirateShips[i].velocity
+
+            if games[gameId].pirateShips[i].frame == 10:
+                games[gameId].pirateShips[i].x -= games[gameId].pirateShips[i].velocity
+                games[gameId].pirateShips[i].y -= games[gameId].pirateShips[i].velocity
+
+            if games[gameId].pirateShips[i].frame == 11:
+                games[gameId].pirateShips[i].x -= games[gameId].pirateShips[i].velocity
+                games[gameId].pirateShips[i].y -= games[gameId].pirateShips[i].velocity//2
+        else:
+            if games[gameId].pirateShips[i].frame == 9:
+                games[gameId].pirateShips[i].frame = 1
+            if games[gameId].pirateShips[i].frame == 10:
+                games[gameId].pirateShips[i].frame = 2
+            if games[gameId].pirateShips[i].frame == 11:
+                games[gameId].pirateShips[i].frame = 3
+
+        # left
+        if games[gameId].pirateShips[i].frame == 12:
+            if games[gameId].pirateShips[i].x + games[gameId].pirateShips[i].velocity > -300:
+                games[gameId].pirateShips[i].x -= games[gameId].pirateShips[i].velocity
+
+
+        # left down
+        if games[gameId].pirateShips[i].x + games[gameId].pirateShips[i].velocity > -300 and games[gameId].pirateShips[i].y - games[gameId].pirateShips[i].velocity < games[gameId].pirateShips[i].maxHeight:
+            if games[gameId].pirateShips[i].frame == 13:
+                    games[gameId].pirateShips[i].x -= games[gameId].pirateShips[i].velocity
+                    games[gameId].pirateShips[i].y += games[gameId].pirateShips[i].velocity//2
+            if games[gameId].pirateShips[i].frame == 14:
+                    games[gameId].pirateShips[i].x -= games[gameId].pirateShips[i].velocity
+                    games[gameId].pirateShips[i].y += games[gameId].pirateShips[i].velocity
+            if games[gameId].pirateShips[i].frame == 15:
+                    games[gameId].pirateShips[i].x -= games[gameId].pirateShips[i].velocity//2
+                    games[gameId].pirateShips[i].y += games[gameId].pirateShips[i].velocity
+        else:
+            if games[gameId].pirateShips[i].frame == 13:
+                games[gameId].pirateShips[i].frame = 5
+            if games[gameId].pirateShips[i].frame == 14:
+                games[gameId].pirateShips[i].frame = 6
+            if games[gameId].pirateShips[i].frame == 15:
+                games[gameId].pirateShips[i].frame = 7
 
 
 def clientThread(connection, playerNumber, gameId):
@@ -56,6 +183,7 @@ def clientThread(connection, playerNumber, gameId):
             # Reply others move
             games[gameId].players[playerNumber] = data
             #aiMove(gameId) # work in progress
+            shipAi(gameId)
             for i in range(len(games[gameId].players)):
                 if i != playerNumber:
                     reply.append(games[gameId].players[i])
