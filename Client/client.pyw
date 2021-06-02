@@ -60,10 +60,17 @@ if __name__ =="__main__":
         refresh(window, playerMe, playerOthers)
 
         # move info
-        if infoCount < 60*5:
+        if infoCount < 60*5: # 5 seconds
             infoCount += 1
             font = pygame.font.SysFont(None, 64)
             window.blit(font.render("Use WASD or Arrow Keys to MOVE", True, (255,255,255)), (width//4-50, height-height//12))
+
+        # use cannon info
+        """
+        if (playerMe.x,playerMe.y) in [(,)]:
+            font = pygame.font.SysFont(None, 64)
+            window.blit(font.render("Hold SPACE to use Cannon", True, (255,255,255)), (width//4-50, height-height//12))
+        """
 
         pygame.display.update()
 
