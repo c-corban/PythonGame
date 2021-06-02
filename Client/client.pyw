@@ -31,11 +31,13 @@ window = pygame.display.set_mode(size)
 pygame.display.set_caption("Better Together")
 
 ship = pygame.transform.scale(pygame.image.load(os.path.join('Images', 'ocean_e_new_ship_small.png')).convert(), (width//2, height)) #(825, 750)
-water = pygame.transform.scale(pygame.image.load(os.path.join('Images', 'water.png')).convert(), (width, height))
+water1 = pygame.transform.scale(pygame.image.load(os.path.join('Images', 'water.png')).convert(), (width//4, height))
+water2 = pygame.transform.scale(pygame.image.load(os.path.join('Images', 'water.png')).convert(), (width//4, height))
 
 
 def refresh(window, playerMe, playerOthers):
-    window.blit(water, (0, 0), (0, 0, width, height))
+    window.blit(water1, (0, 0), (0, 0, width, height))
+    window.blit(water2, (width-width//4, 0), (0, 0, width, height))
     window.blit(ship, (width//4, 0),(0, 0, width, height))
 
     for p in playerOthers:
