@@ -10,8 +10,8 @@ class Player():
         self.maxHeight = 960
         self.maxWidth = 1280
         self.increment = 0
-        self.inventoryWood = 0
-        self.inventoryCannon = 0
+        self.inventoryWood = 9
+        self.inventoryCannon = 9
 
 
     def collision(self, playerImg):
