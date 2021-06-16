@@ -45,7 +45,7 @@ def shipAi(gameId):
         if not random.randrange(60) % 12:
             break
 
-        shipMinWidth = 0 #100
+        shipMinWidth = -50 #100
         shipMaxWidth = 900 #700
         shipMinHeight = -300 #-300
         shipMaxHeight = 900 #900
