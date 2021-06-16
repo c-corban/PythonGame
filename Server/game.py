@@ -15,7 +15,8 @@ class Game:
         self.players = [Player(480, 800, 48, 64, characters[0]), Player(576, 800, 48, 64, characters[1]), Player(722, 800, 48, 64, characters[2]), Player(818, 800, 48, 64, characters[3])]
 
         self.pirateShips.append(Player(-300,-300,549,549,os.path.join('Images', 'Black Sail', 'pirate_ship_00000.png')))
-        #self.pirateShips.append(Player(1050,750,549,549,os.path.join('Images', 'Black Sail', 'pirate_ship_00000.png')))
+
+        self.pirateShips.append(Player(1050,750,549,549,os.path.join('Images', 'Black Sail', 'pirate_ship_00000.png')))
 
         for ship in self.pirateShips:
             ship.maxWidth = 1050
