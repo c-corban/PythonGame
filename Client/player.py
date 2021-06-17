@@ -44,19 +44,6 @@ class Player():
 
         font = pygame.font.SysFont(None, 64)
 
-        woodSurface = pygame.Surface([40,40], pygame.SRCALPHA, 32)
-        cannonSurface = pygame.Surface([40,40], pygame.SRCALPHA, 32)
-
-
-        woodSurface.blit(pygame.image.load(os.path.join('Images', 'wood plank.png')).convert_alpha(), (0, 0))
-        cannonSurface.blit(pygame.image.load(os.path.join('Images', 'cannonball.png')).convert_alpha(), (0, 0))
-
-
-        window.blit(woodSurface, (10,20))
-        window.blit(cannonSurface, (10,70))
-
-        window.blit(font.render("{}".format(self.inventoryWood), True, (0,0,0)), (60, 20))
-        window.blit(font.render("{}".format(self.inventoryCannon), True, (0,0,0)), (60, 70))
 
     def move(self):
         playerImg = pygame.image.load(self.char).convert_alpha()
