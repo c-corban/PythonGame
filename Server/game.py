@@ -19,6 +19,8 @@ class Game:
 
         self.pirateShips.append(Player(-300,-300,549,549,os.path.join('Images', 'Black Sail', 'pirate_ship_00000.png')))
         self.pirateShips.append(Player(1050,750,549,549,os.path.join('Images', 'Black Sail', 'pirate_ship_00000.png')))
+        #self.pirateShips.append(Player(-300,-300,549,549,os.path.join('Images', 'Black Sail before compress', 'pirate_ship_00000.png')))
+        #self.pirateShips.append(Player(1050,750,549,549,os.path.join('Images', 'Black Sail before compress', 'pirate_ship_00000.png')))
 
         for ship in self.pirateShips:
             ship.maxWidth = 1050

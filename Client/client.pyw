@@ -63,6 +63,7 @@ if __name__ =="__main__":
     playerMe = server.getPlayer()
     framerate = pygame.time.Clock()
     infoCount = 0
+    gameOverCount = 0
     aimX = 300
     aimY = 320
     aimVelocity = 4
@@ -76,6 +77,7 @@ if __name__ =="__main__":
     cannonCooldown=60*3
     repairCooldown=60*3
     shootAnimation=False
+    gameOver = False
     font = pygame.font.SysFont(None, 64)
     hit = []
 
@@ -83,6 +85,12 @@ if __name__ =="__main__":
         shootInfoDisplayed = False
         repairInfoDisplayed = False
         framerate.tick(60)
+
+            #for i in range(60*500):
+                #window.blit(font.render("Game Over", True, (255,255,255)), (width//2-50, height//2))
+                #refresh(window, playerMe, playerOthers)
+            #game = False
+            #break
 
         # refill inventory
         if playerMe.inventoryCannon <= 0:
@@ -99,6 +107,16 @@ if __name__ =="__main__":
         playerOthers = server.send(playerMe)
 
         refresh(window, playerMe, playerOthers)
+        #gameOver = True
+        if len(hit)>=30:
+            gameOver = True
+
+        if gameOver:
+            gameOverFont = pygame.font.SysFont(None, 256)
+            window.blit(gameOverFont.render("Game Over", True, (255,0,0)), (width//8, height//2))
+            gameOverCount += 1
+            if gameOverCount > 60*10: # 5 seconds
+                game = False
 
         # enemy shoot
         enemyShotCooldown += 1
@@ -114,95 +132,95 @@ if __name__ =="__main__":
                 if math.floor(enemyAimY) < 820:
                     hit.append((math.floor(enemyAimX), math.floor(enemyAimY)));
                 enemyCannonShoot = 0
-                enemyShoots=random.randrange(3,5)
+                enemyShoots = random.randrange(3,5)
                 missChance = random.randrange(-300,301)
+        if not gameOver:
+            # repair interaction
+            for damage in hit:
+                if damage[0]+15//2 in range(playerMe.x-playerMe.width//3, playerMe.x+playerMe.width+playerMe.width//3) and damage[1]+15//2 in range(playerMe.y-playerMe.width//3, playerMe.y+playerMe.height+playerMe.width//3):
+                    if playerMe.inventoryWood > 0:
 
-        # repair interaction
-        for damage in hit:
-            if damage[0] in range(playerMe.x-20, playerMe.x+40) and damage[1] in range(playerMe.y-20, playerMe.y+40):
-                if playerMe.inventoryWood > 0:
+                        window.blit(font.render(f"Hold SPACE for {int(repairCooldown/6)/10} seconds to repair", True, (255,255,255)), (width//4-50, height-height//12))
+                        repairInfoDisplayed = True
+                        keys = pygame.key.get_pressed()
+                        if repairCooldown>0:
+                            if keys[pygame.K_SPACE]:
+                                repairCooldown-=1;
+                        else:
+                            playerMe.inventoryWood -= 1
+                            hit.remove(damage)
+                            repairCooldown=60*3
+                    else:
+                        if not shootInfoDisplayed and not repairInfoDisplayed:
+                            window.blit(font.render("No Wood", True, (255,255,255)), (width//2-50, height-height//12))
 
-                    window.blit(font.render(f"Hold SPACE for {int(repairCooldown/6)/10} seconds to repair", True, (255,255,255)), (width//4-50, height-height//12))
-                    repairInfoDisplayed = True
-                    keys = pygame.key.get_pressed()
-                    if repairCooldown>0:
+            # cannon interaction
+            if 420 <= playerMe.y <= 740 and (470 <= playerMe.x <= 550 or 760 <= playerMe.x <= 840):
+                keys = pygame.key.get_pressed()
+                if playerMe.inventoryCannon > 0 and cannonCooldown<=0 and not repairInfoDisplayed:
+                    shootInfoDisplayed = True
+                    if keys[pygame.K_SPACE]:
+                        if cannonShoot<=0:
+                            window.blit(font.render("Release SPACE to shoot", True, (255,255,255)), (width//3-50, height-height//12))
+                        else:
+                            window.blit(font.render("Release SPACE to cancel", True, (255,255,255)), (width//3-50, height-height//12))
+                        if (keys[ord('w')] or keys[pygame.K_UP]) and aimY - aimVelocity > 0:
+                            aimY -= aimVelocity
+                            cannonShoot = 0
+
+                        if (keys[ord('a')] or keys[pygame.K_LEFT]) and aimX - aimVelocity > 0:
+                            aimX -= aimVelocity
+                            cannonShoot = 0
+
+                        if (keys[ord('s')] or keys[pygame.K_DOWN]) and aimY + aimVelocity < height:
+                            aimY += aimVelocity
+                            cannonShoot = 0
+
+                        if (keys[ord('d')] or keys[pygame.K_RIGHT]) and aimX + aimVelocity < width:
+                            aimX += aimVelocity
+                            cannonShoot = 0
+
+                        window.blit(aim, (aimX, aimY),(0, 0, width, height))
+                    else:
+                        shootAnimation=True
+                        if not cannonShoot:
+                            playerMe.inventoryCannon -= 1
+                            cannonCooldown=60*3 # 10 seconds
+
+                        if cannonShoot > 60*1:
+                            #reset aim
+                            aimY = playerMe.y-playerMe.height
+                            if 470 <= playerMe.x <= 550:
+                                aimX = playerMe.x-6*playerMe.width
+                            if 760 <= playerMe.x <= 840:
+                                aimX = playerMe.x+6*playerMe.width
+                        if not repairInfoDisplayed:
+                            window.blit(font.render("Hold SPACE to use Cannon", True, (255,255,255)), (width//3-50, height-height//12))
+                        playerMe.move()
+                else:
+                    if cannonCooldown>0 and playerMe.inventoryCannon > 0:
+                        if not repairInfoDisplayed:
+                            window.blit(font.render(f"Hold SPACE for {int(cannonCooldown/6)/10} seconds to reload", True, (255,255,255)), (width//4-50, height-height//12))
                         if keys[pygame.K_SPACE]:
-                            repairCooldown-=1;
-                    else:
-                        playerMe.inventoryWood -= 1
-                        hit.remove(damage)
-                        repairCooldown=60*3
-                else:
-                    if not shootInfoDisplayed and not repairInfoDisplayed:
-                        window.blit(font.render("No Wood", True, (255,255,255)), (width//2-50, height-height//12))
-
-        # cannon interaction
-        if 420 <= playerMe.y <= 740 and (470 <= playerMe.x <= 550 or 760 <= playerMe.x <= 840):
-            keys = pygame.key.get_pressed()
-            if playerMe.inventoryCannon > 0 and cannonCooldown<=0 and not repairInfoDisplayed:
-                shootInfoDisplayed = True
-                if keys[pygame.K_SPACE]:
-                    if cannonShoot<=0:
-                        window.blit(font.render("Release SPACE to shoot", True, (255,255,255)), (width//3-50, height-height//12))
-                    else:
-                        window.blit(font.render("Release SPACE to cancel", True, (255,255,255)), (width//3-50, height-height//12))
-                    if (keys[ord('w')] or keys[pygame.K_UP]) and aimY - aimVelocity > 0:
-                        aimY -= aimVelocity
-                        cannonShoot = 0
-
-                    if (keys[ord('a')] or keys[pygame.K_LEFT]) and aimX - aimVelocity > 0:
-                        aimX -= aimVelocity
-                        cannonShoot = 0
-
-                    if (keys[ord('s')] or keys[pygame.K_DOWN]) and aimY + aimVelocity < height:
-                        aimY += aimVelocity
-                        cannonShoot = 0
-
-                    if (keys[ord('d')] or keys[pygame.K_RIGHT]) and aimX + aimVelocity < width:
-                        aimX += aimVelocity
-                        cannonShoot = 0
-
-                    window.blit(aim, (aimX, aimY),(0, 0, width, height))
-                else:
-                    shootAnimation=True
-                    if not cannonShoot:
-                        playerMe.inventoryCannon -= 1
-                        cannonCooldown=60*3 # 10 seconds
-
-                    if cannonShoot > 60*1:
-                        #reset aim
-                        aimY = playerMe.y-playerMe.height
-                        if 470 <= playerMe.x <= 550:
-                            aimX = playerMe.x-6*playerMe.width
-                        if 760 <= playerMe.x <= 840:
-                            aimX = playerMe.x+6*playerMe.width
-                    if not repairInfoDisplayed:
-                        window.blit(font.render("Hold SPACE to use Cannon", True, (255,255,255)), (width//3-50, height-height//12))
+                            cannonCooldown-=1;
+                    elif not repairInfoDisplayed:
+                        window.blit(font.render("No Ammo", True, (255,255,255)), (width//2-50, height-height//12))
                     playerMe.move()
             else:
-                if cannonCooldown>0 and playerMe.inventoryCannon > 0:
-                    if not repairInfoDisplayed:
-                        window.blit(font.render(f"Hold SPACE for {int(cannonCooldown/6)/10} seconds to reload", True, (255,255,255)), (width//4-50, height-height//12))
-                    if keys[pygame.K_SPACE]:
-                        cannonCooldown-=1;
-                elif not repairInfoDisplayed:
-                    window.blit(font.render("No Ammo", True, (255,255,255)), (width//2-50, height-height//12))
                 playerMe.move()
-        else:
-            playerMe.move()
-            # move info
-            if infoCount < 60*5: # 5 seconds
-                infoCount += 1
-                #font = pygame.font.SysFont(None, 64)
-                if not shootInfoDisplayed and not repairInfoDisplayed:
-                    window.blit(font.render("Use WASD or Arrow Keys to MOVE", True, (255,255,255)), (width//4-50, height-height//12))
-        if shootAnimation:
-            if cannonShoot <= 60*1: # 3 seconds
-                cannonShoot += 1
+                # move info
+                if infoCount < 60*5: # 5 seconds
+                    infoCount += 1
+                    #font = pygame.font.SysFont(None, 64)
+                    if not shootInfoDisplayed and not repairInfoDisplayed:
+                        window.blit(font.render("Use WASD or Arrow Keys to MOVE", True, (255,255,255)), (width//4-50, height-height//12))
+            if shootAnimation:
+                if cannonShoot <= 60*1: # 3 seconds
+                    cannonShoot += 1
 
-                window.blit(pygame.image.load(os.path.join('Images', 'cannonball.png')).convert_alpha(), (playerMe.x-60-(playerMe.x-aimX+20)*cannonShoot/60, playerMe.y+20-(playerMe.y-aimY+20)*cannonShoot/60))
-            else:
-                shootAnimation=False
+                    window.blit(pygame.image.load(os.path.join('Images', 'cannonball.png')).convert_alpha(), (playerMe.x-60-(playerMe.x-aimX+20)*cannonShoot/60, playerMe.y+20-(playerMe.y-aimY+20)*cannonShoot/60))
+                else:
+                    shootAnimation=False
         pygame.display.update()
 
         for event in pygame.event.get():

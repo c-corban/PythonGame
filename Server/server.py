@@ -19,10 +19,10 @@ print("Waiting for connections")
 games = {}
 
 
-def aiMove(gameId): # work in progress
+def aiMove(gameId):
     for i in range(len(games[gameId].ai)):
         if games[gameId].ai[i]:
-            direction = random.randrange(1,11)
+            games[gameId].players[i].move()
 
 
 def shipAi(gameId):
@@ -41,14 +41,15 @@ def shipAi(gameId):
             games[gameId].pirateShips[i].frame += games[gameId].pirateShips[i].increment
 
         games[gameId].pirateShips[i].char = os.path.join('Images', 'Black Sail', 'pirate_ship_{}0000.png'.format(games[gameId].pirateShips[i].frame))
+        #games[gameId].pirateShips[i].char = os.path.join('Images', 'Black Sail before compress', 'pirate_ship_{}0000.png'.format(games[gameId].pirateShips[i].frame))
 
         if not random.randrange(60) % 12:
             break
 
-        shipMinWidth = -50 #100
-        shipMaxWidth = 900 #700
-        shipMinHeight = -300 #-300
-        shipMaxHeight = 900 #900
+        shipMinWidth = -50 #-100 #100
+        shipMaxWidth = 900 #+100 #700
+        shipMinHeight = -300 #-100 #-300
+        shipMaxHeight = 900 #+100 #900
 
         # down
         if games[gameId].pirateShips[i].frame == 0:
@@ -69,13 +70,13 @@ def shipAi(gameId):
             if games[gameId].pirateShips[i].frame == 3:
                 games[gameId].pirateShips[i].x += games[gameId].pirateShips[i].velocity
                 games[gameId].pirateShips[i].y += games[gameId].pirateShips[i].velocity//2
-        else:
+        """else: # if it hits wall, turn around
             if games[gameId].pirateShips[i].frame == 1:
                 games[gameId].pirateShips[i].frame = 9
             if games[gameId].pirateShips[i].frame == 2:
                 games[gameId].pirateShips[i].frame = 10
             if games[gameId].pirateShips[i].frame == 3:
-                games[gameId].pirateShips[i].frame = 11
+                games[gameId].pirateShips[i].frame = 11"""
 
         # right
         if games[gameId].pirateShips[i].frame == 4:
@@ -95,13 +96,13 @@ def shipAi(gameId):
             if games[gameId].pirateShips[i].frame == 7:
                 games[gameId].pirateShips[i].x += games[gameId].pirateShips[i].velocity//2
                 games[gameId].pirateShips[i].y -= games[gameId].pirateShips[i].velocity
-        else:
+        """else: # if it hits wall, turn around
             if games[gameId].pirateShips[i].frame == 5:
                 games[gameId].pirateShips[i].frame = 13
             if games[gameId].pirateShips[i].frame == 6:
                 games[gameId].pirateShips[i].frame = 14
             if games[gameId].pirateShips[i].frame == 7:
-                games[gameId].pirateShips[i].frame = 15
+                games[gameId].pirateShips[i].frame = 15"""
 
         # up
         if games[gameId].pirateShips[i].frame == 8:
@@ -121,13 +122,13 @@ def shipAi(gameId):
             if games[gameId].pirateShips[i].frame == 11:
                 games[gameId].pirateShips[i].x -= games[gameId].pirateShips[i].velocity
                 games[gameId].pirateShips[i].y -= games[gameId].pirateShips[i].velocity//2
-        else:
+        """else: # if it hits wall, turn around
             if games[gameId].pirateShips[i].frame == 9:
                 games[gameId].pirateShips[i].frame = 1
             if games[gameId].pirateShips[i].frame == 10:
                 games[gameId].pirateShips[i].frame = 2
             if games[gameId].pirateShips[i].frame == 11:
-                games[gameId].pirateShips[i].frame = 3
+                games[gameId].pirateShips[i].frame = 3"""
 
         # left
         if games[gameId].pirateShips[i].frame == 12:
@@ -146,13 +147,13 @@ def shipAi(gameId):
             if games[gameId].pirateShips[i].frame == 15:
                     games[gameId].pirateShips[i].x -= games[gameId].pirateShips[i].velocity//2
                     games[gameId].pirateShips[i].y += games[gameId].pirateShips[i].velocity
-        else:
+        """else: # if it hits wall, turn around
             if games[gameId].pirateShips[i].frame == 13:
                 games[gameId].pirateShips[i].frame = 5
             if games[gameId].pirateShips[i].frame == 14:
                 games[gameId].pirateShips[i].frame = 6
             if games[gameId].pirateShips[i].frame == 15:
-                games[gameId].pirateShips[i].frame = 7
+                games[gameId].pirateShips[i].frame = 7"""
 
 def clientThread(connection, playerNumber, gameId):
 
@@ -167,7 +168,7 @@ def clientThread(connection, playerNumber, gameId):
 
             # Reply others move
             games[gameId].players[playerNumber] = data
-            #aiMove(gameId) # work in progress
+            aiMove(gameId) # work in progress
             shipAi(gameId)
             for i in range(len(games[gameId].players)):
                 if i != playerNumber:
