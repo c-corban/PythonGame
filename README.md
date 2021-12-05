@@ -2,9 +2,9 @@
 A multiplayer co-op game about organizing and prioritizing tasks
 
 ## Usage
-To play install python and pygame https://www.pygame.org/wiki/GettingStarted#Pygame%20Installation
-
-#### Windows
+To play install:
+#### python https://www.python.org/downloads/
+#### pygame https://www.pygame.org/wiki/GettingStarted#Pygame%20Installation
 ```
 pip install pygame
 ```
