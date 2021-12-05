@@ -102,7 +102,7 @@ if __name__ =="__main__":
 
         # enemy shoot
         enemyShotCooldown += 1
-        if enemyShotCooldown >= 60*2: # 1 minute
+        if enemyShotCooldown >= 60*6: # 1 minute
             if enemyCannonShoot <= 60*1:
                 enemyCannonShoot += 1
                 enemyAimX=playerOthers[enemyShoots].x+playerOthers[enemyShoots].width//4-(playerOthers[enemyShoots].x+playerOthers[enemyShoots].width//4-playerMe.x+missChance)*enemyCannonShoot/60

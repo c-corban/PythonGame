@@ -3,7 +3,7 @@ pygame.init()
 
 class Player():
     def __init__(self, x, y, width, height, char):
-        self.player = (self.x, self.y, self.width, self.height, self.animation) = (x, y, width, height, list([(24*frame, 64, 24, 32) for frame in range(3)])[1])
+        self.player = (self.x, self.y, self.width, self.height, self.animation) = (x, y, width, height, list([(width*frame, 2*height, width, height) for frame in range(3)])[1])
         self.char = char
         self.frame = 0
         self.velocity = 2
@@ -18,8 +18,8 @@ class Player():
         if not playerImg:
             return False
 
-        cropped = pygame.Surface([24,32], pygame.SRCALPHA, 32)
-        cropped.blit(playerImg, (0,3*32//4), list([(24*frame, 64+3*32//4, 24, 32//4) for frame in range(3)])[1])
+        cropped = pygame.Surface([self.width,self.height], pygame.SRCALPHA, 32)
+        cropped.blit(playerImg, (0,3*self.height//4), list([(self.width*frame, 2*self.height+3*self.height//4, self.width, self.height//4) for frame in range(3)])[1])
 
         obstacle = pygame.transform.scale(pygame.image.load(os.path.join('Images', 'obstacle.png')).convert_alpha(), (self.maxWidth//2, self.maxHeight))
 
@@ -37,11 +37,8 @@ class Player():
 
 
     def draw(self, window):
-
         playerImg = pygame.image.load(self.char).convert_alpha()
-
         window.blit(playerImg,(self.x,self.y),self.animation)
-
         font = pygame.font.SysFont(None, 64)
 
 
@@ -60,43 +57,43 @@ class Player():
         if (keys[ord('w')] or keys[pygame.K_UP]) and self.y + self.velocity > 0:
             standing = False
             self.y -= self.velocity
-            self.animation = list([(24*frame, 0, 24, 32) for frame in range(3)])[self.frame//20]
+            self.animation = list([(self.width*frame, 0, self.width, self.height) for frame in range(3)])[self.frame//20]
             if self.collision(playerImg):
                 self.y += self.velocity
 
         if (keys[ord('a')] or keys[pygame.K_LEFT]) and self.x + self.velocity > 0:
             standing = False
             self.x -= self.velocity
-            self.animation = list([(24*frame, 96, 24, 32) for frame in range(3)])[self.frame//20]
+            self.animation = list([(self.width*frame, 3*self.height, self.width, self.height) for frame in range(3)])[self.frame//20]
             if self.collision(playerImg):
                 self.x += self.velocity
 
         if (keys[ord('s')] or keys[pygame.K_DOWN]) and self.y + self.height - self.velocity < self.maxHeight:
             standing = False
             self.y += self.velocity
-            self.animation = list([(24*frame, 64, 24, 32) for frame in range(3)])[self.frame//20]
+            self.animation = list([(self.width*frame, 2*self.height, self.width, self.height) for frame in range(3)])[self.frame//20]
             if self.collision(playerImg):
                 self.y -= self.velocity
 
         if (keys[ord('d')] or keys[pygame.K_RIGHT]) and self.x + self.width - self.velocity < self.maxWidth:
             standing = False
             self.x += self.velocity
-            self.animation = list([(24*frame, 32, 24, 32) for frame in range(3)])[self.frame//20]
+            self.animation = list([(self.width*frame, self.height, self.width, self.height) for frame in range(3)])[self.frame//20]
             if self.collision(playerImg):
                 self.x -= self.velocity
 
         if standing:
             if self.animation[1] == 0:
-                self.animation = list([(24*frame, 0, 24, 32) for frame in range(3)])[1]
+                self.animation = list([(self.width*frame, 0, self.width, self.height) for frame in range(3)])[1]
 
-            if self.animation[1] == 96:
-                self.animation = list([(24*frame, 96, 24, 32) for frame in range(3)])[1]
+            if self.animation[1] == 3*self.height:
+                self.animation = list([(self.width*frame, 3*self.height, self.width, self.height) for frame in range(3)])[1]
 
-            if self.animation[1] == 64:
-                self.animation = list([(24*frame, 64, 24, 32) for frame in range(3)])[1]
+            if self.animation[1] == 2*self.height:
+                self.animation = list([(self.width*frame, 2*self.height, self.width, self.height) for frame in range(3)])[1]
 
-            if self.animation[1] == 32:
-                self.animation = list([(24*frame, 32, 24, 32) for frame in range(3)])[1]
+            if self.animation[1] == self.height:
+                self.animation = list([(self.width*frame, self.height, self.width, self.height) for frame in range(3)])[1]
 
         #self.update()
 

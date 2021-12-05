@@ -6,16 +6,18 @@ class Game:
         self.id = id
         self.ai = [True, True, True, True]
         self.pirateShips = []
+        #(self.playerWidth,self.playerHeight) = 24, 32
+        (self.playerWidth,self.playerHeight) = 36, 48
+        #(self.playerWidth,self.playerHeight) = 48, 64
 
         characters = ['captain-m-001-light', 'pirate-m-001-light', 'pirate-m-003-light-alt', 'pirate-m-004-light']
         for i in range(len(characters)):
-            characters[i] = os.path.join('Images', 'players', '24x32', '{}.png'.format(characters[i]))
+            characters[i] = os.path.join('Images', 'players', '{}x{}'.format(self.playerWidth,self.playerHeight), '{}.png'.format(characters[i]))
 
         random.shuffle(characters)
-        self.players = [Player(480, 800, 48, 64, characters[0]), Player(576, 800, 48, 64, characters[1]), Player(722, 800, 48, 64, characters[2]), Player(818, 800, 48, 64, characters[3])]
+        self.players = [Player(480, 780, self.playerWidth, self.playerHeight, characters[0]), Player(576, 780, self.playerWidth, self.playerHeight, characters[1]), Player(722, 780, self.playerWidth, self.playerHeight, characters[2]), Player(818, 780, self.playerWidth, self.playerHeight, characters[3])]
 
         self.pirateShips.append(Player(-300,-300,549,549,os.path.join('Images', 'Black Sail', 'pirate_ship_00000.png')))
-
         self.pirateShips.append(Player(1050,750,549,549,os.path.join('Images', 'Black Sail', 'pirate_ship_00000.png')))
 
         for ship in self.pirateShips:
