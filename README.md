@@ -1,9 +1,13 @@
 # Better-Together
 A multiplayer co-op game about organizing and prioritizing tasks
 
+## Usage
+To play install python and run in cmd
+```
+pip install pygame
+```
 
-Assets used (source listed in "Credits" folder):
-
+## Assets used (source listed in "Credits" folder):
 
 Black Sail Ship by Bleed's Game Art
 
