@@ -7,11 +7,11 @@ class Player():
         self.char = char
         self.frame = 0
         self.velocity = 2
-        self.maxHeight = 960
-        self.maxWidth = 1280
         self.increment = 0
-        self.inventoryWood = 9
-        self.inventoryCannon = 9
+        (self.maxHeight, self.maxWidth) = (960, 1280)
+        (self.inventoryWood, self.inventoryCannon) = (9, 9)
+        (self.cannonBallAnimationX, self.cannonBallAnimationY) = (-1000, -1000)
+        (self.targetX, self.targetY) = (-1000, -1000)
 
 
     def collision(self, playerImg):
@@ -39,6 +39,12 @@ class Player():
     def draw(self, window):
         playerImg = pygame.image.load(self.char).convert_alpha()
         window.blit(playerImg,(self.x,self.y),self.animation)
+        #for i in self.cannonshoots:
+            #window.blit("",(i[0], i[1]))
+        #window.blit(pygame.image.load(os.path.join('Images', 'cannonball.png')).convert_alpha(),self.cannonBallAnimationX, self.cannonBallAnimationY))
+        if self.cannonBallAnimationX or self.cannonBallAnimationY:
+            window.blit(pygame.image.load(os.path.join('Images', 'cannonball.png')).convert_alpha(), (self.cannonBallAnimationX, self.cannonBallAnimationY))
+            (self.cannonBallAnimationX, self.cannonBallAnimationY) = (-600, -600)
         font = pygame.font.SysFont(None, 64)
 
 

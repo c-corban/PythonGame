@@ -64,18 +64,14 @@ if __name__ =="__main__":
     framerate = pygame.time.Clock()
     infoCount = 0
     gameOverCount = 0
-    aimX = 300
-    aimY = 320
+    (aimX, aimY) = (300, 320)
     aimVelocity = 4
     cannonShoot = 60*2+1
-    enemyShoots = random.randrange(3,5)
-    missChance = random.randrange(-300,301)
+    enemyShoots = random.randrange(3, 5)
+    missChance = random.randrange(-300, 301)
     enemyCannonShoot = 0
-    inventoryCannonWait = 0
-    inventoryWoodWait = 0
-    enemyShotCooldown = 0
-    cannonCooldown=60*3
-    repairCooldown=60*3
+    (inventoryCannonCooldown, inventoryWoodCooldown, enemyShotCooldown) = (0, 0, 0)
+    (cannonCooldown, repairCooldown) = (60*3, 60*3)
     shootAnimation=False
     gameOver = False
     font = pygame.font.SysFont(None, 64)
@@ -94,15 +90,15 @@ if __name__ =="__main__":
 
         # refill inventory
         if playerMe.inventoryCannon <= 0:
-            inventoryCannonWait += 1
-            if inventoryCannonWait >= 60*10: # 1 minute
+            inventoryCannonCooldown += 1
+            if inventoryCannonCooldown >= 60*10: # 1 minute
                 playerMe.inventoryCannon = 9
-                inventoryCannonWait = 0
+                inventoryCannonCooldown = 0
         if playerMe.inventoryWood <= 0:
-            inventoryWoodWait += 1
-            if inventoryWoodWait >= 60*10: # 1 minute
+            inventoryWoodCooldown += 1
+            if inventoryWoodCooldown >= 60*10: # 1 minute
                 playerMe.inventoryWood = 9
-                inventoryWoodWait = 0
+                inventoryWoodCooldown = 0
 
         playerOthers = server.send(playerMe)
 
@@ -203,6 +199,12 @@ if __name__ =="__main__":
                             window.blit(font.render(f"Hold SPACE for {int(cannonCooldown/6)/10} seconds to reload", True, (255,255,255)), (width//4-50, height-height//12))
                         if keys[pygame.K_SPACE]:
                             cannonCooldown-=1;
+                            #reset aim
+                            aimY = playerMe.y-playerMe.height
+                            if 470 <= playerMe.x <= 550:
+                                aimX = playerMe.x-6*playerMe.width
+                            if 760 <= playerMe.x <= 840:
+                                aimX = playerMe.x+6*playerMe.width
                     elif not repairInfoDisplayed:
                         window.blit(font.render("No Ammo", True, (255,255,255)), (width//2-50, height-height//12))
                     playerMe.move()
@@ -218,8 +220,12 @@ if __name__ =="__main__":
                 if cannonShoot <= 60*1: # 3 seconds
                     cannonShoot += 1
 
-                    window.blit(pygame.image.load(os.path.join('Images', 'cannonball.png')).convert_alpha(), (playerMe.x-60-(playerMe.x-aimX+20)*cannonShoot/60, playerMe.y+20-(playerMe.y-aimY+20)*cannonShoot/60))
+                    #window.blit(pygame.image.load(os.path.join('Images', 'cannonball.png')).convert_alpha(), (playerMe.x-60-(playerMe.x-aimX+20)*cannonShoot/60, playerMe.y+20-(playerMe.y-aimY+20)*cannonShoot/60))
+                    playerMe.cannonBallAnimationX = playerMe.x-60-(playerMe.x-aimX+20)*cannonShoot/60
+                    playerMe.cannonBallAnimationY = playerMe.y+20-(playerMe.y-aimY+20)*cannonShoot/60
+
                 else:
+                    (playerMe.targetX, playerMe.targetY)=(playerMe.cannonBallAnimationX, playerMe.cannonBallAnimationY)
                     shootAnimation=False
         pygame.display.update()
 
