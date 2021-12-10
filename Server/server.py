@@ -27,7 +27,12 @@ def aiMove(gameId):
 
 def shipAi(gameId):
     for i in range(len(games[gameId].pirateShips)):
+        for j in range(4):
+            #if games[gameId].players[j].targetX in  range(games[gameId].pirateShips[i].x, games[gameId].pirateShips[i].x + games[gameId].pirateShips[i].width) and games[gameId].players[j].targetY in  range(games[gameId].pirateShips[i].y, games[gameId].pirateShips[i].y + games[gameId].pirateShips[i].height):
 
+            if games[gameId].players[j].cannonBallAnimationX in  range(games[gameId].pirateShips[i].x, games[gameId].pirateShips[i].x + games[gameId].pirateShips[i].width) and games[gameId].players[j].cannonBallAnimationY in  range(games[gameId].pirateShips[i].y, games[gameId].pirateShips[i].y + games[gameId].pirateShips[i].height):
+                (games[gameId].pirateShips[i].x,games[gameId].pirateShips[i].y)=(1280//2,-600)
+                
         if not random.randrange(60) % 20:
             games[gameId].pirateShips[i].increment = random.randrange(-1,2)
         elif random.randrange(60) % 20:

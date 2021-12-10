@@ -7,12 +7,11 @@ class Player():
         self.char = char
         self.frame = 0
         self.velocity = 2
-        self.maxHeight = 960
-        self.maxWidth = 1280
         self.increment = 0
-        self.inventoryWood = 9
-        self.inventoryCannon = 9
-        self.direction = 0
+        (self.maxHeight, self.maxWidth) = (960, 1280)
+        (self.inventoryWood, self.inventoryCannon) = (9, 9)
+        (self.cannonBallAnimationX, self.cannonBallAnimationY) = (-1000, -1000)
+        (self.targetX, self.targetY) = (-1000, -1000)
 
     def collision(self, playerImg):
         if not playerImg:
