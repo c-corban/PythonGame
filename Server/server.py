@@ -1,4 +1,4 @@
-import socket, pickle, random, os
+import pygame, socket, pickle, random, os
 from _thread import *
 from game import Game
 
@@ -18,11 +18,14 @@ print("Waiting for connections")
 
 games = {}
 
+size = (width, height) = (1280, 960)
+
+window = pygame.display.set_mode(size)
 
 def aiMove(gameId):
     for i in range(len(games[gameId].ai)):
         if games[gameId].ai[i]:
-            games[gameId].players[i].move()
+            games[gameId].players[i].move(pygame.transform.scale(pygame.image.load(os.path.join('Images', 'obstacle.png')).convert_alpha(), (width//2, height)))
 
 
 def shipAi(gameId):
@@ -32,7 +35,7 @@ def shipAi(gameId):
 
             if games[gameId].players[j].cannonBallAnimationX in  range(games[gameId].pirateShips[i].x, games[gameId].pirateShips[i].x + games[gameId].pirateShips[i].width) and games[gameId].players[j].cannonBallAnimationY in  range(games[gameId].pirateShips[i].y, games[gameId].pirateShips[i].y + games[gameId].pirateShips[i].height):
                 (games[gameId].pirateShips[i].x,games[gameId].pirateShips[i].y)=(1280//2,-600)
-                
+
         if not random.randrange(60) % 20:
             games[gameId].pirateShips[i].increment = random.randrange(-1,2)
         elif random.randrange(60) % 20:
