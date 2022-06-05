@@ -163,7 +163,7 @@ def shipAi(gameId):
             if games[gameId].pirateShips[i].frame == 15:
                 games[gameId].pirateShips[i].frame = 7"""
 
-def clientThread(connection, playerNumber, gameId):
+def clientThread(connection, playerNumber, gameId, address):
 
     # Send player object
     connection.send(pickle.dumps(games[gameId].players[playerNumber]))
@@ -188,15 +188,15 @@ def clientThread(connection, playerNumber, gameId):
             connection.sendall(pickle.dumps(reply))
             reply = []
 
-        except: break
+        except: breakf
 
-    print("Lost connection", address)
+    print(f"Lost connection with {address[0]}:{address[1]} )
     games[gameId].ai[playerNumber] = True
 
     if False not in games[gameId].ai:
         try:
             del games[gameId]
-            print("Closing Game", gameId)
+            print("Closed room with ID:", gameId)
 
         except:
             pass
@@ -206,7 +206,7 @@ def clientThread(connection, playerNumber, gameId):
 
 while True:
     connection, address = s.accept()
-    print("Connected to:", address)
+    print(f"Connected to {address[0]}:{address[1]}")
 
     found = False
 
@@ -219,7 +219,7 @@ while True:
                     playerNumber = aiControlled
                     gameId = game
 
-                    print("Joining game", gameId)
+                    print("Joined room with ID:", gameId)
 
                     games[gameId].ai[playerNumber] = False
                     break
@@ -242,10 +242,10 @@ while True:
         else:
             gameId = 0
 
-        print("Creating a new game.", gameId)
+        print("Created room with ID:", gameId)
 
         games[gameId] = Game(gameId)
         playerNumber = 0
         games[gameId].ai[0] = False
 
-    start_new_thread(clientThread, (connection, playerNumber, gameId))
+    start_new_thread(clientThread, (connection, playerNumber, gameId, address))
