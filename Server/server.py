@@ -188,7 +188,7 @@ def clientThread(connection, playerNumber, gameId, address):
             connection.sendall(pickle.dumps(reply))
             reply = []
 
-        except: breakf
+        except: break
 
     print(f"Lost connection with {address[0]}:{address[1]}")
     games[gameId].ai[playerNumber] = True
