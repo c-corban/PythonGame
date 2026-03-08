@@ -1,6 +1,5 @@
 Credit: Svetlana Kushnariova (Cabbit) <lana-chan@yandex.ru> & Jordan Irwin (AntumDeluge)
 
-
 Name:
   Sailors & Pirates
 Version:

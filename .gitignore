@@ -1,1 +1,10 @@
 __pycache__/
+*.egg-info/
+**/__pycache__/
+
+# macOS Finder metadata
+.DS_Store
+
+# Local editor settings
+.idea/
+.vscode/
