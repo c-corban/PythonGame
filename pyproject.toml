@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "better-together"
+version = "0.1.0"
+description = "A multiplayer co-op pirate-ship prototype built with Python and Pygame."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "pygame",
+]
+
+[project.scripts]
+better-together-client = "better_together_client.cli:main"
+better-together-server = "better_together_server.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+better_together_client = ["Images/*", "Images/**/*", "Images/**/**/*", "Images/**/**/**/*"]
+better_together_server = ["Images/*", "Images/**/*", "Images/**/**/*", "Images/**/**/**/*"]
