@@ -23,8 +23,22 @@ class AuthoritativeGameplayState:
     cannon_reload_ticks_remaining: int = 0
     cannon_reload_duration_ticks: int = 0
 
+    def reset(self):
+        default_state = type(self)()
+        self.tick_rate_hz = default_state.tick_rate_hz
+        self.game_over = default_state.game_over
+        self.game_over_ticks_remaining = default_state.game_over_ticks_remaining
+        self.repair_target = default_state.repair_target
+        self.repair_ticks_remaining = default_state.repair_ticks_remaining
+        self.repair_duration_ticks = default_state.repair_duration_ticks
+        self.cannon_reload_ticks_remaining = default_state.cannon_reload_ticks_remaining
+        self.cannon_reload_duration_ticks = default_state.cannon_reload_duration_ticks
+
     def apply(self, gameplay_state):
-        gameplay_state = gameplay_state or {}
+        if not gameplay_state:
+            self.reset()
+            return
+
         self.tick_rate_hz = int(gameplay_state.get("tick_rate_hz", self.tick_rate_hz or 1)) or 1
         self.game_over = bool(gameplay_state.get("game_over", self.game_over))
         self.game_over_ticks_remaining = int(

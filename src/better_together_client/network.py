@@ -114,7 +114,11 @@ class Network:
             pass
         finally:
             self.client = None
+            self.room_id = None
+            self.player_number = None
             self.connected = False
+            self.damage_markers = []
+            self.enemy_projectiles = []
             self.player_projectiles = []
             self.gameplay_state = {}
 

@@ -73,15 +73,21 @@ def advance_game_over_state(game):
 def advance_player_repairs(game):
     for crew_index, crew_member in enumerate(game.crew_members):
         if game.ai[crew_index]:
+            game.repair_ticks_remaining[crew_index] = game.repair_duration_ticks
             game.active_repair_targets[crew_index] = None
             continue
 
+        previous_repair_target = game.active_repair_targets[crew_index]
         repair_target = game.resolve_repair_target(crew_index)
-        game.active_repair_targets[crew_index] = repair_target
-
         if repair_target is None or not game.action_pressed[crew_index] or crew_member.inventoryWood <= 0:
+            game.repair_ticks_remaining[crew_index] = game.repair_duration_ticks
+            game.active_repair_targets[crew_index] = None
             continue
 
+        if previous_repair_target != repair_target:
+            game.repair_ticks_remaining[crew_index] = game.repair_duration_ticks
+
+        game.active_repair_targets[crew_index] = repair_target
         if game.repair_ticks_remaining[crew_index] > 1:
             game.repair_ticks_remaining[crew_index] -= 1
             continue
@@ -95,6 +101,11 @@ def advance_player_repairs(game):
 def advance_player_cannon_actions(game):
     for crew_index, crew_member in enumerate(game.crew_members):
         if game.ai[crew_index]:
+            game.pending_fire_requests[crew_index] = False
+            continue
+
+        repair_target = game.resolve_repair_target(crew_index)
+        if repair_target is not None and crew_member.inventoryWood > 0:
             game.pending_fire_requests[crew_index] = False
             continue
 

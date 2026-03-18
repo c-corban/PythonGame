@@ -260,6 +260,25 @@ def handle_cannon_controls(runtime, session_state, player_me, frame_state, keys,
     return action_state
 
 
+def should_start_local_shoot_animation(previous_action_state, action_state, session_state, player_me, frame_state):
+    if previous_action_state is None:
+        return False
+
+    if not previous_action_state.get("action_pressed") or action_state.get("action_pressed"):
+        return False
+
+    if previous_action_state.get("aim_target") is None:
+        return False
+
+    if frame_state.repair_info_displayed or not player_in_cannon_zone(player_me):
+        return False
+
+    if player_me.inventoryCannon <= 0:
+        return False
+
+    return session_state.authoritative_state.cannon_reload_ticks_remaining <= 0
+
+
 def update_shoot_animation(session_state, player_me):
     if not session_state.shoot_animation:
         return
@@ -314,6 +333,7 @@ def main():
                 action_state=pending_action_state,
             )
 
+            update_shoot_animation(session_state, player_me)
             render.refresh(runtime, player_me, player_others)
             keep_running = update_game_over_overlay(runtime, session_state)
 
@@ -324,6 +344,16 @@ def main():
             if not session_state.authoritative_state.game_over:
                 action_state = handle_repairs(runtime, session_state, player_me, frame_state, keys, action_state)
                 action_state = handle_cannon_controls(runtime, session_state, player_me, frame_state, keys, action_state)
+
+            if should_start_local_shoot_animation(
+                pending_action_state,
+                action_state,
+                session_state,
+                player_me,
+                frame_state,
+            ):
+                session_state.cannon_shoot = 0
+                session_state.shoot_animation = True
 
             pending_action_state = action_state
 

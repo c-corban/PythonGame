@@ -136,6 +136,36 @@ class ServerAISimulationTests(unittest.TestCase):
         self.assertEqual(crew_member.inventoryWood, 8)
         self.assertEqual(game.repair_ticks_remaining[player_number], game.repair_duration_ticks)
 
+    def test_advance_player_repairs_resets_progress_when_interaction_stops(self):
+        registry = self.room_manager.RoomRegistry()
+        player_number, room_id, _ = registry.assign_player_slot()
+        game = registry.games[room_id]
+        crew_member = game.crew_members[player_number]
+        repair_target = (crew_member.x, crew_member.y)
+        game.damage_markers = [repair_target]
+        game.update_action_state(
+            player_number,
+            {
+                "action_pressed": True,
+                "repair_target": repair_target,
+            },
+        )
+
+        self.ai.advance_player_repairs(game)
+        self.assertEqual(game.repair_ticks_remaining[player_number], game.repair_duration_ticks - 1)
+
+        game.update_action_state(
+            player_number,
+            {
+                "action_pressed": False,
+                "repair_target": repair_target,
+            },
+        )
+        self.ai.advance_player_repairs(game)
+
+        self.assertEqual(game.repair_ticks_remaining[player_number], game.repair_duration_ticks)
+        self.assertEqual(game.active_repair_targets[player_number], None)
+
     def test_advance_player_cannon_actions_uses_authoritative_reload_and_fire_request(self):
         registry = self.room_manager.RoomRegistry()
         player_number, room_id, _ = registry.assign_player_slot()
@@ -174,6 +204,46 @@ class ServerAISimulationTests(unittest.TestCase):
         self.assertEqual(game.player_projectile_positions(), [(crew_member.x - 60, crew_member.y + 20)])
         self.assertEqual((crew_member.targetX, crew_member.targetY), (-1000, -1000))
         self.assertEqual((crew_member.cannonBallAnimationX, crew_member.cannonBallAnimationY), (-1000, -1000))
+
+    def test_advance_player_cannon_actions_yields_to_repair_context(self):
+        registry = self.room_manager.RoomRegistry()
+        player_number, room_id, _ = registry.assign_player_slot()
+        game = registry.games[room_id]
+        crew_member = game.crew_members[player_number]
+        crew_member.x = 500
+        crew_member.y = 500
+        repair_target = (crew_member.x, crew_member.y)
+        game.damage_markers = [repair_target]
+        game.cannon_reload_ticks_remaining[player_number] = 1
+
+        game.update_action_state(
+            player_number,
+            {
+                "action_pressed": True,
+                "repair_target": repair_target,
+                "aim_target": (350, 120),
+            },
+        )
+        self.ai.advance_player_repairs(game)
+        self.ai.advance_player_cannon_actions(game)
+
+        self.assertEqual(game.repair_ticks_remaining[player_number], game.repair_duration_ticks - 1)
+        self.assertEqual(game.cannon_reload_ticks_remaining[player_number], 1)
+
+        game.update_action_state(
+            player_number,
+            {
+                "action_pressed": False,
+                "repair_target": repair_target,
+                "aim_target": (350, 120),
+            },
+        )
+        self.ai.advance_player_repairs(game)
+        self.ai.advance_player_cannon_actions(game)
+
+        self.assertEqual(crew_member.inventoryCannon, 9)
+        self.assertIsNone(game.active_shots[player_number])
+        self.assertEqual(game.damage_markers, [repair_target])
 
     def test_advance_player_projectiles_resolves_hits_against_pirate_ships(self):
         registry = self.room_manager.RoomRegistry()

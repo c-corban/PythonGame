@@ -53,6 +53,29 @@ class ClientSessionStateTests(unittest.TestCase):
         self.assertEqual(session_state.authoritative_state.cannon_reload_ticks_remaining, 9)
         self.assertAlmostEqual(session_state.authoritative_state.seconds_remaining(15), 0.75)
 
+    def test_apply_authoritative_state_resets_when_payload_is_empty(self):
+        session_state = GameplaySessionState()
+        session_state.apply_authoritative_state(
+            {
+                "tick_rate_hz": 20,
+                "game_over": True,
+                "game_over_ticks_remaining": 199,
+                "repair_target": (10, 20),
+                "repair_ticks_remaining": 15,
+                "repair_duration_ticks": 60,
+                "cannon_reload_ticks_remaining": 9,
+                "cannon_reload_duration_ticks": 60,
+            }
+        )
+
+        session_state.apply_authoritative_state({})
+
+        self.assertFalse(session_state.game_over)
+        self.assertFalse(session_state.authoritative_state.game_over)
+        self.assertEqual(session_state.authoritative_state.repair_target, None)
+        self.assertEqual(session_state.authoritative_state.repair_ticks_remaining, 0)
+        self.assertEqual(session_state.authoritative_state.cannon_reload_ticks_remaining, 0)
+
     def test_create_action_state_normalizes_targets(self):
         session_state = GameplaySessionState()
 

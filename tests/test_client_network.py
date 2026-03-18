@@ -111,3 +111,26 @@ class ClientNetworkLifecycleTests(unittest.TestCase):
         self.assertEqual(network.player_projectiles, [(55, 66)])
         self.assertEqual(network.gameplay_state, room_state_gameplay_state)
         self.assertEqual(len(player_others), 1)
+
+    def test_close_clears_cached_room_state(self):
+        fake_socket = Mock()
+        network = self.network_module.Network()
+        network.client = fake_socket
+        network.connected = True
+        network.room_id = 7
+        network.player_number = 2
+        network.damage_markers = [(11, 22)]
+        network.enemy_projectiles = [(33, 44)]
+        network.player_projectiles = [(55, 66)]
+        network.gameplay_state = {"game_over": True}
+
+        network.close()
+
+        fake_socket.close.assert_called_once_with()
+        self.assertFalse(network.connected)
+        self.assertEqual(network.room_id, None)
+        self.assertEqual(network.player_number, None)
+        self.assertEqual(network.damage_markers, [])
+        self.assertEqual(network.enemy_projectiles, [])
+        self.assertEqual(network.player_projectiles, [])
+        self.assertEqual(network.gameplay_state, {})

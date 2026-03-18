@@ -43,6 +43,49 @@ class ClientGameLoopTests(unittest.TestCase):
         self.assertIsInstance(player.cannonBallAnimationX, int)
         self.assertIsInstance(player.cannonBallAnimationY, int)
 
+    def test_should_start_local_shoot_animation_requires_ready_release(self):
+        player = SimpleNamespace(x=500, y=500, width=36, height=48, inventoryCannon=2)
+        session_state = GameplaySessionState()
+        session_state.apply_authoritative_state(
+            {
+                "tick_rate_hz": 20,
+                "repair_ticks_remaining": 0,
+                "repair_duration_ticks": 60,
+                "cannon_reload_ticks_remaining": 0,
+                "cannon_reload_duration_ticks": 60,
+            }
+        )
+        frame_state = session_state.begin_frame()
+        previous_action_state = session_state.create_action_state(
+            action_pressed=True,
+            aim_target=(350, 120),
+        )
+        action_state = session_state.create_action_state(
+            action_pressed=False,
+            aim_target=(350, 120),
+        )
+
+        self.assertTrue(
+            self.game_loop.should_start_local_shoot_animation(
+                previous_action_state,
+                action_state,
+                session_state,
+                player,
+                frame_state,
+            )
+        )
+
+        frame_state.repair_info_displayed = True
+        self.assertFalse(
+            self.game_loop.should_start_local_shoot_animation(
+                previous_action_state,
+                action_state,
+                session_state,
+                player,
+                frame_state,
+            )
+        )
+
     def test_update_game_over_overlay_uses_authoritative_server_state(self):
         runtime = SimpleNamespace(window=Mock())
         session_state = GameplaySessionState()

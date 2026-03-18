@@ -11,7 +11,7 @@ from numbers import Integral
 from better_together_shared.asset_catalog import normalize_asset_reference
 
 
-PROTOCOL_VERSION = 2
+PROTOCOL_VERSION = 3
 
 PLAYER_ASSIGNMENT_MESSAGE = "player_assignment"
 PLAYER_UPDATE_MESSAGE = "player_update"
@@ -349,6 +349,10 @@ def validate_message(message, expected_message_type=None):
             "repaired_damage_markers",
             InvalidProtocolMessageError,
         )
+        if "action_state" not in normalized_message:
+            raise InvalidProtocolMessageError(
+                "Field `action_state` is required for player_update messages."
+            )
         normalized_message["action_state"] = validate_action_state(
             normalized_message.get("action_state")
         )

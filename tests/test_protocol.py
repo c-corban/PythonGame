@@ -183,6 +183,20 @@ class ProtocolHelperTests(unittest.TestCase):
         with self.assertRaises(InvalidPlayerSnapshotError):
             create_update_message({"x": 10, "y": 20})
 
+    def test_validate_message_rejects_player_update_without_action_state(self):
+        snapshot = create_player_snapshot(make_player_like())
+
+        with self.assertRaises(InvalidProtocolMessageError):
+            validate_message(
+                {
+                    "protocol_version": PROTOCOL_VERSION,
+                    "message_type": PLAYER_UPDATE_MESSAGE,
+                    "player": snapshot,
+                    "repaired_damage_markers": [],
+                },
+                PLAYER_UPDATE_MESSAGE,
+            )
+
     def test_extract_assigned_player_rejects_invalid_assignment_metadata(self):
         snapshot = create_player_snapshot(make_player_like())
         message = {
