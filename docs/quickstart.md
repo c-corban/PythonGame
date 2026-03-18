@@ -4,8 +4,7 @@ This guide is the fastest safe path to running the current prototype locally.
 
 ## Prerequisites
 
-- Python 3
-- `pygame`
+- Python 3.11 or newer
 - A graphical desktop session capable of opening Pygame windows for the **client**
 
 Examples below use `python`. If your machine exposes Python as `python3`, use that command instead.
@@ -18,18 +17,20 @@ For a full local development checkout, install the repository from the repositor
 python -m pip install -e .
 ```
 
+That editable install also installs the runtime dependency `pygame` plus the `better-together-server` and `better-together-client` console scripts.
+
 For a split deployment on separate computers, check out the repository on each machine, install it from the repository root, and run only the role that machine needs.
 
-## Run automated checks
+## Canonical automated baseline
 
-Before launching the prototype for code changes, run the lightweight automated baseline from the repository root:
+Before launching the prototype for code changes, run this canonical automated baseline from the repository root. Other summary docs point here instead of repeating the same command block:
 
 ```bash
 python scripts/build_runtime_assets.py --check
 python -m unittest discover -s tests -v
 ```
 
-These tests currently cover server room invariants, mirrored asset-helper behavior, shared protocol helpers, package entrypoint import safety, and a basic live server handshake / cleanup flow. They do **not** replace runtime smoke testing for rendering or full gameplay input.
+These tests currently cover startup/config resolution, macOS launcher and package-entrypoint behavior, server room invariants, mirrored asset-helper behavior, shared protocol and transport helpers, client render/session/game-loop helpers, and a basic live server handshake / cleanup flow. They do **not** replace runtime smoke testing for rendering or full gameplay input.
 
 If you change `src/better_together_shared/asset_catalog.py` or any runtime image source files, regenerate the package-local runtime bundles before running the tests:
 
@@ -37,7 +38,7 @@ If you change `src/better_together_shared/asset_catalog.py` or any runtime image
 python scripts/build_runtime_assets.py
 ```
 
-Canonical checked-in asset masters now live under `assets/source/`; the generator refreshes the package-local `src/better_together_client/Images/` and `src/better_together_server/Images/` runtime bundles from that source tree.
+Most checked-in asset masters now live under `assets/source/`; the generator refreshes the package-local `src/better_together_client/Images/` and `src/better_together_server/Images/` runtime bundles from the asset catalog's preferred build inputs. As of today, `ui.aim`, `world.water`, and `world.ship-deck` still build from legacy files under `src/better_together_client/Images/` until those inputs are migrated.
 
 ## Launch order
 
@@ -68,7 +69,7 @@ On macOS, you can instead double-click `Launch Better Together Client.command` f
 
 If the client cannot connect, it exits with a clear message telling you to start the server entrypoint first.
 
-The package entrypoints above are the preferred launch path.
+The `python -m ...` package entrypoints above are the preferred launch path. The editable install also exposes `better-together-server` and `better-together-client` if you want console-script shortcuts.
 
 The macOS `.command` launchers prefer the repository `.venv` when it exists, fall back to `python3` / `python` when it does not, prepend `src/` to `PYTHONPATH` for raw-checkout launches, and set `BETTER_TOGETHER_ENV_FILE` to `src/better_together_server/.env` or `src/better_together_client/.env` automatically when those role-specific files exist.
 
@@ -102,7 +103,7 @@ Optional multiplayer check:
 
 - Networking now supports separate bind and connect settings, but it still assumes a trusted LAN-style setup and manual host configuration.
 - Networking now uses simple length-prefixed framing around `pickle` payloads plus basic message/snapshot validation, but it still assumes a trusted LAN-style setup and is not hardened for hostile clients.
-- Automated tests cover server room invariants, mirrored asset helpers, and a basic live protocol flow, but manual smoke tests still matter for rendering and full gameplay behavior.
+- Automated tests cover startup/config, protocol/transport, client render/session/game-loop helpers, server room/simulation invariants, mirrored asset helpers, and a basic live server flow, but manual smoke tests still matter for rendering and full gameplay behavior.
 - The server is now headless-capable, but its collision logic still relies on runtime image loading from the server asset tree.
 - Runtime asset bundles are now described by `src/better_together_shared/asset_catalog.py` and can be rebuilt or validated with `scripts/build_runtime_assets.py`.
 

@@ -68,6 +68,22 @@ PLAYER_SNAPSHOT_INTEGER_FIELDS = (
 )
 
 DEFAULT_DAMAGE_MARKERS = ()
+DEFAULT_PLAYER_PROJECTILES = ()
+DEFAULT_ACTION_STATE = {
+    "action_pressed": False,
+    "repair_target": None,
+    "aim_target": None,
+}
+DEFAULT_GAMEPLAY_STATE = {
+    "tick_rate_hz": 1,
+    "game_over": False,
+    "game_over_ticks_remaining": 0,
+    "repair_target": None,
+    "repair_ticks_remaining": 0,
+    "repair_duration_ticks": 0,
+    "cannon_reload_ticks_remaining": 0,
+    "cannon_reload_duration_ticks": 0,
+}
 
 
 class ProtocolValidationError(ValueError):
@@ -97,6 +113,13 @@ def _is_integral_value(value):
 def _validate_integral(value, field_name, error_cls):
     if not _is_integral_value(value):
         raise error_cls(f"Field `{field_name}` must be an integer, got {type(value).__name__}.")
+
+    return value
+
+
+def _validate_boolean(value, field_name, error_cls):
+    if not isinstance(value, bool):
+        raise error_cls(f"Field `{field_name}` must be a boolean, got {type(value).__name__}.")
 
     return value
 
@@ -142,8 +165,102 @@ def _validate_coordinate_pairs(coordinate_pairs, field_name, error_cls):
     return normalized_coordinate_pairs
 
 
+def _validate_optional_coordinate_pair(coordinate_pair, field_name, error_cls):
+    if coordinate_pair is None:
+        return None
+
+    if not isinstance(coordinate_pair, (list, tuple)) or len(coordinate_pair) != 2:
+        raise error_cls(
+            f"Field `{field_name}` must be None or a 2-item list/tuple of integers."
+        )
+
+    return (
+        _validate_integral(coordinate_pair[0], f"{field_name}[0]", error_cls),
+        _validate_integral(coordinate_pair[1], f"{field_name}[1]", error_cls),
+    )
+
+
 def _validate_damage_markers(damage_markers, field_name, error_cls):
     return _validate_coordinate_pairs(damage_markers, field_name, error_cls)
+
+
+def validate_action_state(action_state):
+    if action_state is None:
+        return dict(DEFAULT_ACTION_STATE)
+
+    if not isinstance(action_state, dict):
+        raise InvalidProtocolMessageError(
+            f"Field `action_state` must be a dictionary, got {type(action_state).__name__}."
+        )
+
+    normalized_action_state = dict(DEFAULT_ACTION_STATE)
+    normalized_action_state.update(action_state)
+    normalized_action_state["action_pressed"] = _validate_boolean(
+        normalized_action_state["action_pressed"],
+        "action_state.action_pressed",
+        InvalidProtocolMessageError,
+    )
+    normalized_action_state["repair_target"] = _validate_optional_coordinate_pair(
+        normalized_action_state.get("repair_target"),
+        "action_state.repair_target",
+        InvalidProtocolMessageError,
+    )
+    normalized_action_state["aim_target"] = _validate_optional_coordinate_pair(
+        normalized_action_state.get("aim_target"),
+        "action_state.aim_target",
+        InvalidProtocolMessageError,
+    )
+    return normalized_action_state
+
+
+def validate_gameplay_state(gameplay_state):
+    if gameplay_state is None:
+        return dict(DEFAULT_GAMEPLAY_STATE)
+
+    if not isinstance(gameplay_state, dict):
+        raise InvalidProtocolMessageError(
+            f"Field `gameplay_state` must be a dictionary, got {type(gameplay_state).__name__}."
+        )
+
+    normalized_gameplay_state = dict(DEFAULT_GAMEPLAY_STATE)
+    normalized_gameplay_state.update(gameplay_state)
+
+    normalized_gameplay_state["tick_rate_hz"] = _validate_integral(
+        normalized_gameplay_state["tick_rate_hz"],
+        "gameplay_state.tick_rate_hz",
+        InvalidProtocolMessageError,
+    )
+    if normalized_gameplay_state["tick_rate_hz"] <= 0:
+        raise InvalidProtocolMessageError("Field `gameplay_state.tick_rate_hz` must be greater than 0.")
+    normalized_gameplay_state["game_over"] = _validate_boolean(
+        normalized_gameplay_state["game_over"],
+        "gameplay_state.game_over",
+        InvalidProtocolMessageError,
+    )
+
+    for field_name in (
+        "game_over_ticks_remaining",
+        "repair_ticks_remaining",
+        "repair_duration_ticks",
+        "cannon_reload_ticks_remaining",
+        "cannon_reload_duration_ticks",
+    ):
+        normalized_gameplay_state[field_name] = _validate_integral(
+            normalized_gameplay_state[field_name],
+            f"gameplay_state.{field_name}",
+            InvalidProtocolMessageError,
+        )
+        if normalized_gameplay_state[field_name] < 0:
+            raise InvalidProtocolMessageError(
+                f"Field `gameplay_state.{field_name}` must be greater than or equal to 0."
+            )
+
+    normalized_gameplay_state["repair_target"] = _validate_optional_coordinate_pair(
+        normalized_gameplay_state.get("repair_target"),
+        "gameplay_state.repair_target",
+        InvalidProtocolMessageError,
+    )
+    return normalized_gameplay_state
 
 
 def infer_entity_kind(snapshot):
@@ -220,6 +337,9 @@ def validate_message(message, expected_message_type=None):
         _validate_integral(normalized_message.get("room_id"), "room_id", InvalidProtocolMessageError)
         _validate_integral(normalized_message.get("player_number"), "player_number", InvalidProtocolMessageError)
         normalized_message["player"] = validate_player_snapshot(normalized_message.get("player"))
+        normalized_message["gameplay_state"] = validate_gameplay_state(
+            normalized_message.get("gameplay_state")
+        )
         return normalized_message
 
     if message_type == PLAYER_UPDATE_MESSAGE:
@@ -228,6 +348,9 @@ def validate_message(message, expected_message_type=None):
             normalized_message.get("repaired_damage_markers", []),
             "repaired_damage_markers",
             InvalidProtocolMessageError,
+        )
+        normalized_message["action_state"] = validate_action_state(
+            normalized_message.get("action_state")
         )
         return normalized_message
 
@@ -252,6 +375,14 @@ def validate_message(message, expected_message_type=None):
             normalized_message.get("enemy_projectiles", []),
             "enemy_projectiles",
             InvalidProtocolMessageError,
+        )
+        normalized_message["player_projectiles"] = _validate_coordinate_pairs(
+            normalized_message.get("player_projectiles", []),
+            "player_projectiles",
+            InvalidProtocolMessageError,
+        )
+        normalized_message["gameplay_state"] = validate_gameplay_state(
+            normalized_message.get("gameplay_state")
         )
         return normalized_message
 
@@ -320,19 +451,20 @@ def is_message_type(message, expected_message_type):
     )
 
 
-def create_assignment_message(player_number, room_id, player_or_snapshot):
+def create_assignment_message(player_number, room_id, player_or_snapshot, gameplay_state=None):
     return validate_message(
         create_message(
             PLAYER_ASSIGNMENT_MESSAGE,
             room_id=room_id,
             player_number=player_number,
             player=ensure_player_snapshot(player_or_snapshot),
+            gameplay_state=validate_gameplay_state(gameplay_state),
         ),
         PLAYER_ASSIGNMENT_MESSAGE,
     )
 
 
-def create_update_message(player_or_snapshot, repaired_damage_markers=None):
+def create_update_message(player_or_snapshot, repaired_damage_markers=None, action_state=None):
     return validate_message(
         create_message(
             PLAYER_UPDATE_MESSAGE,
@@ -342,12 +474,13 @@ def create_update_message(player_or_snapshot, repaired_damage_markers=None):
                 "repaired_damage_markers",
                 InvalidProtocolMessageError,
             ),
+            action_state=validate_action_state(action_state),
         ),
         PLAYER_UPDATE_MESSAGE,
     )
 
 
-def create_room_state_message(room_id, entities, self_player=None, damage_markers=None, enemy_projectiles=None):
+def create_room_state_message(room_id, entities, self_player=None, damage_markers=None, enemy_projectiles=None, player_projectiles=None, gameplay_state=None):
     return validate_message(
         create_message(
             ROOM_STATE_MESSAGE,
@@ -364,6 +497,12 @@ def create_room_state_message(room_id, entities, self_player=None, damage_marker
                 "enemy_projectiles",
                 InvalidProtocolMessageError,
             ),
+            player_projectiles=_validate_coordinate_pairs(
+                player_projectiles,
+                "player_projectiles",
+                InvalidProtocolMessageError,
+            ),
+            gameplay_state=validate_gameplay_state(gameplay_state),
         ),
         ROOM_STATE_MESSAGE,
     )
@@ -374,6 +513,13 @@ def extract_assigned_player(message):
         return validate_message(message, PLAYER_ASSIGNMENT_MESSAGE)["player"]
     except ProtocolValidationError:
         return None
+
+
+def extract_assignment_gameplay_state(message):
+    try:
+        return validate_message(message, PLAYER_ASSIGNMENT_MESSAGE)["gameplay_state"]
+    except ProtocolValidationError:
+        return dict(DEFAULT_GAMEPLAY_STATE)
 
 
 def extract_player_update(message):
@@ -388,6 +534,13 @@ def extract_repaired_damage_markers(message):
         return validate_message(message, PLAYER_UPDATE_MESSAGE)["repaired_damage_markers"]
     except ProtocolValidationError:
         return []
+
+
+def extract_action_state(message):
+    try:
+        return validate_message(message, PLAYER_UPDATE_MESSAGE)["action_state"]
+    except ProtocolValidationError:
+        return dict(DEFAULT_ACTION_STATE)
 
 
 def extract_room_state_self_player(message):
@@ -411,6 +564,20 @@ def extract_room_state_enemy_projectiles(message):
         return []
 
 
+def extract_room_state_player_projectiles(message):
+    try:
+        return validate_message(message, ROOM_STATE_MESSAGE)["player_projectiles"]
+    except ProtocolValidationError:
+        return list(DEFAULT_PLAYER_PROJECTILES)
+
+
+def extract_room_state_gameplay_state(message):
+    try:
+        return validate_message(message, ROOM_STATE_MESSAGE)["gameplay_state"]
+    except ProtocolValidationError:
+        return dict(DEFAULT_GAMEPLAY_STATE)
+
+
 def create_players_from_room_state(player_factory, message):
     try:
         validated_message = validate_message(message, ROOM_STATE_MESSAGE)
@@ -425,6 +592,9 @@ def create_players_from_room_state(player_factory, message):
 
 __all__ = [
     "CREW_MEMBER_ENTITY_KIND",
+    "DEFAULT_ACTION_STATE",
+    "DEFAULT_GAMEPLAY_STATE",
+    "DEFAULT_PLAYER_PROJECTILES",
     "ENTITY_KINDS",
     "InvalidPlayerSnapshotError",
     "InvalidProtocolMessageError",
@@ -447,15 +617,21 @@ __all__ = [
     "create_update_message",
     "deserialize_message",
     "ensure_player_snapshot",
+    "extract_action_state",
     "extract_assigned_player",
+    "extract_assignment_gameplay_state",
     "extract_player_update",
     "extract_repaired_damage_markers",
     "extract_room_state_damage_markers",
     "extract_room_state_enemy_projectiles",
+    "extract_room_state_gameplay_state",
+    "extract_room_state_player_projectiles",
     "extract_room_state_self_player",
     "infer_entity_kind",
     "is_message_type",
     "serialize_message",
+    "validate_action_state",
+    "validate_gameplay_state",
     "validate_message",
     "validate_player_snapshot",
 ]

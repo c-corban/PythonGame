@@ -14,8 +14,11 @@ from better_together_shared.protocol import (
     PLAYER_ASSIGNMENT_MESSAGE,
     ROOM_STATE_MESSAGE,
     create_player_snapshot,
+    extract_assignment_gameplay_state,
     extract_room_state_damage_markers,
     extract_room_state_enemy_projectiles,
+    extract_room_state_gameplay_state,
+    extract_room_state_player_projectiles,
     extract_room_state_self_player,
     is_message_type,
 )
@@ -75,11 +78,20 @@ class RoomManagerTests(unittest.TestCase):
         self.assertTrue(is_message_type(assignment_message, PLAYER_ASSIGNMENT_MESSAGE))
         self.assertEqual(assignment_message["player_number"], player_number)
         self.assertEqual(assignment_message["room_id"], room_id)
+        self.assertEqual(
+            extract_assignment_gameplay_state(assignment_message)["cannon_reload_ticks_remaining"],
+            registry.games[room_id].cannon_reload_duration_ticks,
+        )
         self.assertTrue(is_message_type(room_state_message, ROOM_STATE_MESSAGE))
         self.assertEqual(len(room_state_message["entities"]), 5)
         self.assertIsNotNone(extract_room_state_self_player(room_state_message))
         self.assertEqual(extract_room_state_damage_markers(room_state_message), [])
         self.assertEqual(extract_room_state_enemy_projectiles(room_state_message), [])
+        self.assertEqual(extract_room_state_player_projectiles(room_state_message), [])
+        self.assertEqual(
+            extract_room_state_gameplay_state(room_state_message)["tick_rate_hz"],
+            registry.games[room_id].tick_rate_hz,
+        )
 
     def test_room_registry_applies_player_updates_without_direct_game_access(self):
         registry = self.room_manager.RoomRegistry()
@@ -96,7 +108,7 @@ class RoomManagerTests(unittest.TestCase):
             (snapshot["x"], snapshot["y"]),
         )
 
-    def test_room_registry_applies_repairs_to_authoritative_damage_markers(self):
+    def test_room_registry_does_not_trust_client_reported_repairs(self):
         registry = self.room_manager.RoomRegistry()
         player_number, room_id, _ = registry.assign_player_slot()
         registry.games[room_id].damage_markers = [(10, 20), (30, 40)]
@@ -110,4 +122,41 @@ class RoomManagerTests(unittest.TestCase):
         )
 
         self.assertTrue(applied)
-        self.assertEqual(registry.games[room_id].damage_markers, [(30, 40)])
+        self.assertEqual(registry.games[room_id].damage_markers, [(10, 20), (30, 40)])
+
+    def test_room_registry_preserves_server_authoritative_inventory_and_shot_state(self):
+        registry = self.room_manager.RoomRegistry()
+        player_number, room_id, _ = registry.assign_player_slot()
+        game = registry.games[room_id]
+        snapshot = create_player_snapshot(game.crew_members[player_number])
+        snapshot["x"] += 25
+        snapshot["inventoryWood"] = 0
+        snapshot["inventoryCannon"] = 0
+        snapshot["cannonBallAnimationX"] = 123
+        snapshot["cannonBallAnimationY"] = 456
+        snapshot["targetX"] = 789
+        snapshot["targetY"] = 321
+
+        applied = registry.apply_player_update(
+            room_id,
+            player_number,
+            snapshot,
+            action_state={
+                "action_pressed": True,
+                "repair_target": (10, 20),
+                "aim_target": (300, 400),
+            },
+        )
+
+        crew_member = game.crew_members[player_number]
+        self.assertTrue(applied)
+        self.assertEqual(crew_member.x, snapshot["x"])
+        self.assertEqual((crew_member.inventoryWood, crew_member.inventoryCannon), (9, 9))
+        self.assertEqual(
+            (crew_member.cannonBallAnimationX, crew_member.cannonBallAnimationY),
+            (-1000, -1000),
+        )
+        self.assertEqual((crew_member.targetX, crew_member.targetY), (-1000, -1000))
+        self.assertTrue(game.action_pressed[player_number])
+        self.assertEqual(game.requested_repair_targets[player_number], (10, 20))
+        self.assertEqual(game.aim_targets[player_number], (300, 400))

@@ -87,12 +87,14 @@ class ClientRenderRuntimeTests(unittest.TestCase):
             font=fake_font,
             hit=[(11, 22)],
             enemy_projectiles=[(44, 55)],
+            player_projectiles=[(66, 77)],
         )
 
         self.render.refresh(runtime, player_me, [player_other])
 
         self.assertIn(call(runtime.water, (11, 22), (0, 0, 15, 15)), fake_surface.blit.call_args_list)
         self.assertIn(call(runtime.cannonball_icon, (44, 55)), fake_surface.blit.call_args_list)
+        self.assertIn(call(runtime.cannonball_icon, (66, 77)), fake_surface.blit.call_args_list)
         self.assertNotIn(call(runtime.cannonball_icon, (11, 22)), fake_surface.blit.call_args_list)
         player_other.draw.assert_called_once_with(fake_surface)
         player_me.draw.assert_called_once_with(fake_surface)

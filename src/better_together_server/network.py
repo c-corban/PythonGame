@@ -5,6 +5,7 @@ import threading
 
 from better_together_shared.config import NETWORK_BUFFER_SIZE
 from better_together_shared.protocol import (
+    extract_action_state,
     extract_player_update,
     extract_repaired_damage_markers,
 )
@@ -83,12 +84,14 @@ def client_thread(connection, player_number, game_id, address, room_registry=Non
             if player_update_snapshot is None:
                 break
             repaired_damage_markers = extract_repaired_damage_markers(player_update_message)
+            action_state = extract_action_state(player_update_message)
 
             if not room_registry.apply_player_update(
                 game_id,
                 player_number,
                 player_update_snapshot,
                 repaired_damage_markers=repaired_damage_markers,
+                action_state=action_state,
             ):
                 break
             room_state_message = room_registry.build_room_state_message(game_id, player_number)

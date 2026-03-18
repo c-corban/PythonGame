@@ -24,6 +24,7 @@ from better_together_shared.protocol import (
     create_update_message,
     extract_assigned_player,
     extract_room_state_damage_markers,
+    extract_room_state_player_projectiles,
     extract_room_state_self_player,
     is_message_type,
 )
@@ -100,6 +101,7 @@ class ServerProtocolIntegrationTests(unittest.TestCase):
                 self.assertEqual(reply_message.get("room_id"), 0)
                 self.assertEqual(extract_room_state_self_player(reply_message)["x"], assigned_player["x"])
                 self.assertEqual(extract_room_state_damage_markers(reply_message), [])
+                self.assertEqual(extract_room_state_player_projectiles(reply_message), [])
 
                 reply = reply_message.get("entities", [])
 

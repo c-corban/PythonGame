@@ -64,7 +64,6 @@ class Player:
         window.blit(playerImg, (self.x, self.y), self.animation)
         if self.cannonBallAnimationX > -900 and self.cannonBallAnimationY > -900:
             window.blit(load_image(CANNONBALL_ASSET_ID), (self.cannonBallAnimationX, self.cannonBallAnimationY))
-            (self.cannonBallAnimationX, self.cannonBallAnimationY) = (-1000, -1000)
 
     def move(self):
         playerImg = load_image(self.char)

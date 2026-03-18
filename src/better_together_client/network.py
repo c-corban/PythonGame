@@ -9,8 +9,11 @@ from better_together_shared.protocol import (
     create_players_from_room_state,
     create_update_message,
     extract_assigned_player,
+    extract_assignment_gameplay_state,
     extract_room_state_damage_markers,
     extract_room_state_enemy_projectiles,
+    extract_room_state_gameplay_state,
+    extract_room_state_player_projectiles,
     extract_room_state_self_player,
 )
 from better_together_shared.transport import TransportError, receive_message, send_message
@@ -40,6 +43,8 @@ class Network:
         self.player = None
         self.damage_markers = []
         self.enemy_projectiles = []
+        self.player_projectiles = []
+        self.gameplay_state = {}
         self.connected = False
 
     def getPlayer(self):
@@ -64,6 +69,8 @@ class Network:
             self.player = create_player_from_snapshot(get_client_player_class(), assigned_player_snapshot)
             self.damage_markers = []
             self.enemy_projectiles = []
+            self.player_projectiles = []
+            self.gameplay_state = extract_assignment_gameplay_state(assignment_message)
             self.connected = True
             return self.player
         except (OSError, TransportError) as errMsg:
@@ -71,14 +78,18 @@ class Network:
             self.close()
             return None
 
-    def send(self, data, repaired_damage_markers=None):
+    def send(self, data, repaired_damage_markers=None, action_state=None):
         if self.client is None or self.player is None or not self.connected:
             return []
 
         try:
             send_message(
                 self.client,
-                create_update_message(data, repaired_damage_markers=repaired_damage_markers),
+                create_update_message(
+                    data,
+                    repaired_damage_markers=repaired_damage_markers,
+                    action_state=action_state,
+                ),
             )
             room_state_message = receive_message(self.client)
             self.room_id = room_state_message.get("room_id", self.room_id)
@@ -87,6 +98,8 @@ class Network:
                 apply_player_snapshot(self.player, authoritative_player_snapshot)
             self.damage_markers = extract_room_state_damage_markers(room_state_message)
             self.enemy_projectiles = extract_room_state_enemy_projectiles(room_state_message)
+            self.player_projectiles = extract_room_state_player_projectiles(room_state_message)
+            self.gameplay_state = extract_room_state_gameplay_state(room_state_message)
             return create_players_from_room_state(get_client_player_class(), room_state_message)
         except (socket.error, TransportError) as errMsg:
             print(errMsg)
@@ -102,6 +115,8 @@ class Network:
         finally:
             self.client = None
             self.connected = False
+            self.player_projectiles = []
+            self.gameplay_state = {}
 
 
 __all__ = ["Network", "buffer", "client_player_class", "get_client_player_class"]

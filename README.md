@@ -6,14 +6,20 @@ The repository currently contains a playable local client/server prototype where
 
 ## Quick start
 
-This project currently has one runtime dependency: `pygame`.
+This project targets Python 3.11 or newer and currently has one runtime dependency: `pygame`.
 
-1. Install Python from <https://www.python.org/downloads/>.
-2. Install Pygame from <https://www.pygame.org/wiki/GettingStarted#Pygame%20Installation>.
-3. From the repository root, install the project in editable mode:
+1. Install Python 3.11 or newer from <https://www.python.org/downloads/>.
+2. From the repository root, install the project in editable mode:
 
 ```bash
 python -m pip install -e .
+```
+
+That editable install also installs `pygame` plus the `better-together-server` and `better-together-client` console scripts.
+
+3. Start the server and client with the canonical package entrypoints:
+
+```bash
 python -m better_together_server
 python -m better_together_client
 ```
@@ -33,16 +39,13 @@ The canonical runtime packages live in the repo-root `src/` tree:
 - `src/better_together_server/`
 - `src/better_together_shared/`
 
+The editable install also exposes `better-together-server` and `better-together-client`, but the `python -m ...` entrypoints above remain the preferred launch path.
+
 If the client and server will run on different computers, edit `src/better_together_server/.env` on the server machine and `src/better_together_client/.env` on the client machine so the bind/connect host settings match your LAN.
 
 The server runtime is now headless-capable, so it no longer needs to open a Pygame window just to host multiplayer state.
 
-Optional but recommended before larger code changes:
-
-```bash
-python scripts/build_runtime_assets.py --check
-python -m unittest discover -s tests -v
-```
+Optional but recommended before larger code changes: use the canonical automated baseline in [`docs/quickstart.md#canonical-automated-baseline`](docs/quickstart.md#canonical-automated-baseline).
 
 If you change the shared asset catalog or any runtime image sources, regenerate the package-local runtime bundles from the repository root:
 
@@ -56,19 +59,24 @@ For full setup notes, launch caveats, and smoke-test steps, see [`docs/quickstar
 
 ## Documentation
 
-- [`docs/quickstart.md`](docs/quickstart.md) — installation, launch order, and local smoke-test flow.
+If you're not sure where a fact lives or which document should move with a change, start with [`docs/knowledge-base.md`](docs/knowledge-base.md).
+
+- [`docs/knowledge-base.md`](docs/knowledge-base.md) — map of the live docs, the `.github` customization layer, and update ownership by topic.
+- [`docs/quickstart.md`](docs/quickstart.md) — installation, canonical automated baseline, launch order, and local smoke-test flow.
 - [`docs/architecture.md`](docs/architecture.md) — client/server boundaries, room lifecycle, transport contract, and runtime caveats.
 - [`docs/gameplay-status.md`](docs/gameplay-status.md) — original concept versus the currently implemented prototype.
 - [`docs/contributing.md`](docs/contributing.md) — repo map, safe-change guidance, and manual verification checklist.
-- [`docs/assets-licenses.md`](docs/assets-licenses.md) — current asset inventory, attribution, and license notes.
+- [`docs/assets-licenses.md`](docs/assets-licenses.md) — current asset inventory, attribution record, and open follow-up notes.
 
 ## Repository map
 
+- `.github/` — workspace-shared Copilot instructions, agents, prompts, and skills for AI-assisted work.
+- `AGENTS.md` — quick human-readable map of the workspace-shared Copilot customization layer.
 - `src/` — canonical Python package tree containing `better_together_client`, `better_together_server`, and `better_together_shared`.
-- `assets/source/` — canonical checked-in master art used to regenerate runtime bundles.
+- `assets/source/` — primary checked-in master art used to regenerate most runtime bundles; a few catalog entries still point at legacy package-local client images until they are migrated.
 - `reference/` — concept notes, raw license texts, and an asset wish list / research list.
 - `credits/` — one file per currently tracked asset attribution source.
-- `docs/` — project knowledge base for contributors and future AI-assisted work.
+- `docs/` — live project knowledge base for contributors and future AI-assisted work; start with `docs/knowledge-base.md`.
 
 ## Current project status
 
@@ -83,4 +91,4 @@ See [`docs/gameplay-status.md`](docs/gameplay-status.md) for the detailed gap be
 
 Current asset attributions are documented in [`docs/assets-licenses.md`](docs/assets-licenses.md), with raw source notes preserved in `credits/`.
 
-Logical runtime asset IDs now live in `src/better_together_shared/asset_catalog.py`, canonical master art now lives under `assets/source/`, and the package-local client/server runtime bundles can be validated or regenerated with `scripts/build_runtime_assets.py`.
+Logical runtime asset IDs now live in `src/better_together_shared/asset_catalog.py`. Most canonical master art now lives under `assets/source/`, while the catalog still builds `ui.aim`, `world.water`, and `world.ship-deck` from legacy files in `src/better_together_client/Images/` until those inputs are migrated. The package-local client/server runtime bundles can be validated or regenerated with `scripts/build_runtime_assets.py`.

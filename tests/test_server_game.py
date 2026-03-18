@@ -90,3 +90,31 @@ class GameRoomInvariantTests(unittest.TestCase):
             self.game.last_simulation_tick_at,
             base_time + (2 * self.game.tick_interval_seconds),
         )
+
+    def test_resolve_repair_target_prefers_requested_target_when_multiple_markers_are_in_range(self):
+        crew_member = self.game.crew_members[0]
+        first_target = (crew_member.x, crew_member.y)
+        second_target = (crew_member.x + 10, crew_member.y + 10)
+        self.game.damage_markers = [first_target, second_target]
+        self.game.requested_repair_targets[0] = second_target
+
+        self.assertEqual(self.game.resolve_repair_target(0), second_target)
+
+    def test_is_player_in_cannon_zone_preserves_current_boundary_behavior(self):
+        crew_member = self.game.crew_members[0]
+        cases = (
+            (470, 420, True),
+            (550, 740, True),
+            (760, 420, True),
+            (840, 740, True),
+            (469, 420, False),
+            (841, 420, False),
+            (470, 419, False),
+            (470, 741, False),
+        )
+
+        for x_position, y_position, expected in cases:
+            with self.subTest(x=x_position, y=y_position):
+                crew_member.x = x_position
+                crew_member.y = y_position
+                self.assertEqual(self.game.is_player_in_cannon_zone(0), expected)

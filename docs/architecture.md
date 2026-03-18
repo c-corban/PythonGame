@@ -4,8 +4,9 @@ This document describes the code as it exists today, not the eventual ideal arch
 
 ## Runtime overview
 
-Better-Together is a Python/Pygame prototype with three canonical runtime packages in the repo-root `src/` tree:
+Better-Together is a Python/Pygame prototype with three canonical runtime packages in the repo-root `src/` tree. These are the highest-value runtime anchors inside that surface:
 
+- `src/better_together_shared/config.py` owns shared runtime constants and `.env` discovery.
 - `src/better_together_client/game_loop.py` owns the main gameplay loop.
 - `src/better_together_client/network.py` owns the client socket protocol.
 - `src/better_together_client/render.py` owns the client `RenderRuntime` object and drawing helpers.
@@ -15,6 +16,7 @@ Better-Together is a Python/Pygame prototype with three canonical runtime packag
 - `src/better_together_server/network.py` owns the server accept loop and per-client protocol handling.
 - `src/better_together_server/ai.py` owns AI crew movement, pirate ship updates, and the server-side simulation tick helpers.
 - `src/better_together_shared/protocol.py` owns the snapshot/message contract used by both sides.
+- `src/better_together_shared/transport.py` owns the framed socket read/write helpers used by both sides.
 
 Package entrypoints now bootstrap directly through `src/better_together_client/cli.py` and `src/better_together_server/cli.py`, while the root macOS launchers call those same modules with `src/` added to `PYTHONPATH` for raw-checkout execution.
 
@@ -37,9 +39,9 @@ The client process is responsible for:
 - collecting keyboard input,
 - moving the locally controlled crew member,
 - rendering the ship, water, UI, projectiles, and other entities through `RenderRuntime`,
-- tracking repair prompts, cannon prompts, local cooldowns, pending repair actions, and game-over display,
+- tracking local prompt presentation, cannon aim placement, and other frame-to-frame HUD state,
 - rendering server-authoritative enemy projectile flights and deck damage markers,
-- sending the local player state to the server each frame.
+- sending the local player snapshot plus interaction intent to the server each frame.
 
 Key anchors:
 
@@ -65,7 +67,9 @@ The server process is responsible for:
 - advancing AI crew movement on the server simulation tick,
 - advancing pirate ship behavior on the server simulation tick,
 - advancing active enemy projectile flights and converting impacts into deck damage markers,
-- returning the other entities in the room to each client.
+- advancing authoritative repair timing, cannon reload timing, cannon-fire acceptance, player projectile flight, and cannon hit resolution,
+- evaluating the authoritative game-over condition and countdown,
+- returning `room_state` replies that include the other entities in the room plus the authoritative local snapshot, current damage markers, active enemy projectile positions, active player projectile positions, and authoritative gameplay state for the connected crew slot.
 
 Key anchors:
 
@@ -87,7 +91,7 @@ The module-level `games` dictionary and helper functions still exist, but they n
 
 `RoomRegistry` now also owns the synchronization lock used by the background simulation loop and the per-client protocol handlers.
 
-More room-facing protocol operations now live behind the registry as well, including assignment-message creation, applying incoming crew updates, building room-state replies, and advancing due simulation steps.
+More room-facing protocol operations now live behind the registry as well, including assignment-message creation, applying incoming crew updates and repaired damage markers, building room-state replies, and advancing due simulation steps.
 
 Each `Game`:
 
@@ -102,7 +106,7 @@ Current lifecycle behavior:
 1. A new connection tries to join an existing room with at least one AI-controlled crew slot.
 2. If no such slot exists, the server creates a new room.
 3. On disconnect, that crew slot flips back to `AI`.
-4. If all four crew slots are AI-controlled again, the room is deleted.
+4. If all four crew slots are AI-controlled again, the room is deleted and its numeric room ID becomes available for reuse.
 
 Important convention: `Game.ai[i] == True` currently means the slot is AI-controlled and therefore available for a future human client.
 
@@ -130,23 +134,24 @@ The transport model is intentionally simple and currently fragile:
 - a `protocol_version` field on every message dictionary,
 - a 4-byte length-prefixed frame around each serialized payload,
 - a maximum framed payload size of `65535` bytes,
-- basic protocol validation for message type, room metadata, and player snapshot shape,
+- basic protocol validation for message type, room metadata, `entity_kind`, player snapshot shape, repaired damage markers, and enemy projectile coordinate pairs,
 - one initial assignment message followed by frame-by-frame player snapshot updates.
 
 ### Connection flow
 
 1. `src/better_together_client/network.py::Network.connect()` opens a TCP connection to the configured client target address (defaults to `localhost:2911`).
 2. The server immediately sends a framed `player_assignment` message containing `room_id`, `player_number`, and a snapshot of the assigned crew slot.
-3. Each frame, the client sends a framed `player_update` message containing the local player snapshot.
-4. The server applies that snapshot to the stored crew slot, applies any repaired room damage markers included in the update, and replies with a framed `room_state` message containing snapshots for every other entity in the room.
-5. The `room_state` reply now also carries the server-authoritative snapshot of the local crew slot plus the current room damage markers and active enemy projectile positions.
-6. AI crew and pirate ships advance on the server’s background simulation loop rather than once per received client message.
+3. The assignment message now also carries the initial authoritative gameplay state for that crew slot, including repair/reload timers and match-over state.
+4. Each frame, the client sends a framed `player_update` message containing the local player snapshot plus action intent such as the current `SPACE` hold state, requested repair target, and cannon aim target.
+5. The server applies only the client-owned movement/animation fields from that snapshot to the stored crew slot, advances authoritative interaction state on the simulation tick, and replies with a framed `room_state` message containing snapshots for every other crew member and pirate ship in the room.
+6. The `room_state` reply now also carries the server-authoritative snapshot of the local crew slot plus the current room damage markers, active enemy projectile positions, active player projectile positions, and authoritative gameplay state for repair/reload/game-over behavior.
+7. AI crew and pirate ships still advance on the server’s background simulation loop rather than once per received client message.
 
 ## Critical compatibility contract
 
 The wire contract now lives in `src/better_together_shared/protocol.py`.
 
-Protocol helpers now validate the decoded message shape before the runtime applies it. Invalid snapshots or malformed message payloads are rejected at the protocol boundary instead of failing later in `apply_player_snapshot()` or rendering code.
+Protocol helpers now validate the decoded message shape before the runtime applies it. Invalid snapshots or malformed message payloads are rejected at the protocol boundary instead of failing later in `apply_player_snapshot()` or rendering code. That includes the inferred and validated `entity_kind` field used to distinguish crew members from pirate ships.
 
 The snapshot field `char` is now a logical asset identifier rather than a raw package-relative image path. Client and server runtimes resolve those IDs through `src/better_together_shared/asset_catalog.py`.
 
@@ -179,9 +184,9 @@ The current prototype is **not** fully server-authoritative.
 
 The client owns or directly drives several gameplay behaviors, including:
 
-- repair prompts and hold-to-repair timing,
-- cannon aiming and reload timing,
-- game-over display logic.
+- prompt presentation and HUD text,
+- cannon aim placement while the player is holding the interaction button,
+- window/render lifecycle.
 
 Those client-side timers and prompts now live in `src/better_together_client/session.py::GameplaySessionState`, while `src/better_together_client/render.py` owns the runtime resources needed to draw them.
 
@@ -189,8 +194,11 @@ The server owns or advances:
 
 - room membership,
 - the latest stored state per crew slot,
+- authoritative repair progress and wood consumption,
+- authoritative cannon reload progress, shot acceptance, player projectile flight, and cannon hit resolution,
 - server-authoritative room damage markers,
 - active enemy projectile flight,
+- authoritative game-over state and countdown,
 - inventory refill timing,
 - AI crew wandering,
 - pirate ship motion.
@@ -208,11 +216,11 @@ Both `src/better_together_client/assets.py` and `src/better_together_server/asse
 
 The shared asset catalog now also records preferred build inputs and runtime bundle targets. `src/better_together_shared/asset_pipeline.py` and `scripts/build_runtime_assets.py` use that metadata to validate or regenerate the package-local `Images/` trees for the client and server bundles.
 
-Canonical checked-in master art now lives under `assets/source/`, while the package-local `Images/` trees contain the generated runtime-facing bundles consumed by the client and headless server.
+Most checked-in master art now lives under `assets/source/`, while the package-local `Images/` trees contain the generated runtime-facing bundles consumed by the client and headless server. A few current catalog entries still build from legacy client package files: `ui.aim`, `world.water`, and `world.ship-deck`.
 
 The client bundle keeps the visual runtime art, while the server bundle now intentionally stores collision-oriented mask versions for crew and obstacle assets. Those server images are still resolved through the same logical asset IDs, but they are optimized for `pygame.mask` generation rather than for rendering quality.
 
-The canonical asset bundles now live directly beside those packages in `src/better_together_client/Images/` and `src/better_together_server/Images/`.
+The generated runtime bundles now live directly beside those packages in `src/better_together_client/Images/` and `src/better_together_server/Images/`.
 
 When a display surface exists, the loaders still use `convert()` / `convert_alpha()` for client-side rendering performance. Without a display surface, they now fall back to the raw loaded image surface.
 

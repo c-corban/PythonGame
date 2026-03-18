@@ -31,6 +31,26 @@ class ClientNetworkLifecycleTests(unittest.TestCase):
 
     def test_connect_and_send_update_authoritative_state(self):
         fake_socket = Mock()
+        assignment_gameplay_state = {
+            "tick_rate_hz": 20,
+            "game_over": False,
+            "game_over_ticks_remaining": 0,
+            "repair_target": None,
+            "repair_ticks_remaining": 60,
+            "repair_duration_ticks": 60,
+            "cannon_reload_ticks_remaining": 60,
+            "cannon_reload_duration_ticks": 60,
+        }
+        room_state_gameplay_state = {
+            "tick_rate_hz": 20,
+            "game_over": True,
+            "game_over_ticks_remaining": 199,
+            "repair_target": (11, 22),
+            "repair_ticks_remaining": 15,
+            "repair_duration_ticks": 60,
+            "cannon_reload_ticks_remaining": 9,
+            "cannon_reload_duration_ticks": 60,
+        }
         assignment_snapshot = {
             "x": 100,
             "y": 200,
@@ -60,13 +80,15 @@ class ClientNetworkLifecycleTests(unittest.TestCase):
         room_state_entity_snapshot["y"] = 400
 
         receive_messages = [
-            create_assignment_message(0, 0, assignment_snapshot),
+            create_assignment_message(0, 0, assignment_snapshot, gameplay_state=assignment_gameplay_state),
             create_room_state_message(
                 0,
                 [room_state_entity_snapshot],
                 self_player=room_state_self_snapshot,
                 damage_markers=[(11, 22)],
                 enemy_projectiles=[(33, 44)],
+                player_projectiles=[(55, 66)],
+                gameplay_state=room_state_gameplay_state,
             ),
         ]
 
@@ -75,10 +97,17 @@ class ClientNetworkLifecycleTests(unittest.TestCase):
                 with patch.object(self.network_module, "send_message"):
                     network = self.network_module.Network()
                     player_me = network.connect()
-                    player_others = network.send(player_me, repaired_damage_markers=[(11, 22)])
+                    self.assertEqual(network.gameplay_state, assignment_gameplay_state)
+                    player_others = network.send(
+                        player_me,
+                        repaired_damage_markers=[(11, 22)],
+                        action_state={"action_pressed": True, "repair_target": (11, 22)},
+                    )
 
         self.assertTrue(network.connected)
         self.assertEqual((player_me.inventoryWood, player_me.inventoryCannon), (5, 4))
         self.assertEqual(network.damage_markers, [(11, 22)])
         self.assertEqual(network.enemy_projectiles, [(33, 44)])
+        self.assertEqual(network.player_projectiles, [(55, 66)])
+        self.assertEqual(network.gameplay_state, room_state_gameplay_state)
         self.assertEqual(len(player_others), 1)

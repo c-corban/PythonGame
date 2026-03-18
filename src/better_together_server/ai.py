@@ -6,7 +6,7 @@ from better_together_shared.asset_catalog import OBSTACLE_ASSET_ID, get_pirate_s
 from better_together_shared.config import WINDOW_HEIGHT, WINDOW_WIDTH
 
 from .assets import load_scaled_image
-from .game import MAX_SIMULATION_STEPS_PER_ADVANCE
+from .game import DEFAULT_ACTION_TARGET, MAX_SIMULATION_STEPS_PER_ADVANCE
 
 from .room_manager import default_room_registry
 
@@ -33,10 +33,10 @@ def advance_ai_crew(game):
             game.crew_members[crew_index].move(obstacle)
 
 
-def _crew_member_hits_pirate_ship(crew_member, pirate_ship):
+def _player_projectile_hits_pirate_ship(projectile, pirate_ship):
     return (
-        crew_member.cannonBallAnimationX in range(pirate_ship.x, pirate_ship.x + pirate_ship.width)
-        and crew_member.cannonBallAnimationY in range(pirate_ship.y, pirate_ship.y + pirate_ship.height)
+        projectile["x"] in range(pirate_ship.x, pirate_ship.x + pirate_ship.width)
+        and projectile["y"] in range(pirate_ship.y, pirate_ship.y + pirate_ship.height)
     )
 
 
@@ -54,6 +54,104 @@ def _create_enemy_projectile(pirate_ship, impact_x, impact_y, total_ticks):
         "ticks_remaining": total_ticks,
         "total_ticks": total_ticks,
     }
+
+
+def advance_game_over_state(game):
+    if game.game_over:
+        if game.game_over_ticks_remaining > 0:
+            game.game_over_ticks_remaining -= 1
+        return True
+
+    if len(game.damage_markers) >= game.game_over_damage_threshold:
+        game.game_over = True
+        game.game_over_ticks_remaining = game.game_over_delay_ticks
+        return True
+
+    return False
+
+
+def advance_player_repairs(game):
+    for crew_index, crew_member in enumerate(game.crew_members):
+        if game.ai[crew_index]:
+            game.active_repair_targets[crew_index] = None
+            continue
+
+        repair_target = game.resolve_repair_target(crew_index)
+        game.active_repair_targets[crew_index] = repair_target
+
+        if repair_target is None or not game.action_pressed[crew_index] or crew_member.inventoryWood <= 0:
+            continue
+
+        if game.repair_ticks_remaining[crew_index] > 1:
+            game.repair_ticks_remaining[crew_index] -= 1
+            continue
+
+        game.remove_damage_markers([repair_target])
+        crew_member.inventoryWood = max(0, crew_member.inventoryWood - 1)
+        game.repair_ticks_remaining[crew_index] = game.repair_duration_ticks
+        game.active_repair_targets[crew_index] = None
+
+
+def advance_player_cannon_actions(game):
+    for crew_index, crew_member in enumerate(game.crew_members):
+        if game.ai[crew_index]:
+            game.pending_fire_requests[crew_index] = False
+            continue
+
+        in_cannon_zone = game.is_player_in_cannon_zone(crew_index)
+        is_action_pressed = game.action_pressed[crew_index]
+
+        if (
+            in_cannon_zone
+            and is_action_pressed
+            and crew_member.inventoryCannon > 0
+            and game.cannon_reload_ticks_remaining[crew_index] > 0
+        ):
+            if game.cannon_reload_ticks_remaining[crew_index] > 1:
+                game.cannon_reload_ticks_remaining[crew_index] -= 1
+            else:
+                game.cannon_reload_ticks_remaining[crew_index] = 0
+
+        if game.pending_fire_requests[crew_index]:
+            if (
+                in_cannon_zone
+                and crew_member.inventoryCannon > 0
+                and game.cannon_reload_ticks_remaining[crew_index] <= 0
+            ):
+                crew_member.inventoryCannon = max(0, crew_member.inventoryCannon - 1)
+                game.cannon_reload_ticks_remaining[crew_index] = game.cannon_reload_duration_ticks
+                if game.aim_targets[crew_index] == DEFAULT_ACTION_TARGET:
+                    game.aim_targets[crew_index] = game.default_cannon_aim_target(crew_index)
+                game.create_cannon_shot(crew_index)
+
+            game.pending_fire_requests[crew_index] = False
+
+
+def advance_player_projectiles(game):
+    for crew_index, active_shot in enumerate(game.active_shots):
+        if active_shot is None:
+            continue
+
+        active_shot["ticks_elapsed"] += 1
+        total_ticks = max(1, active_shot["total_ticks"])
+        progress = min(active_shot["ticks_elapsed"], total_ticks)
+        active_shot["x"] = round(
+            active_shot["origin_x"]
+            + (active_shot["target_x"] - active_shot["origin_x"]) * progress / total_ticks
+        )
+        active_shot["y"] = round(
+            active_shot["origin_y"]
+            + (active_shot["target_y"] - active_shot["origin_y"]) * progress / total_ticks
+        )
+
+        for pirate_ship in game.pirate_ships:
+            if _player_projectile_hits_pirate_ship(active_shot, pirate_ship):
+                pirate_ship.x, pirate_ship.y = (WINDOW_WIDTH // 2, -600)
+                game.active_shots[crew_index] = None
+                break
+        else:
+            if progress >= total_ticks:
+                game.active_shots[crew_index] = None
 
 
 def advance_enemy_projectiles(game):
@@ -82,10 +180,6 @@ def advance_enemy_projectiles(game):
 
 def advance_pirate_ships(game):
     for pirate_ship in game.pirate_ships:
-        for crew_member in game.crew_members:
-            if _crew_member_hits_pirate_ship(crew_member, pirate_ship):
-                (pirate_ship.x, pirate_ship.y) = (WINDOW_WIDTH // 2, -600)
-
         if not random.randrange(60) % 20:
             pirate_ship.increment = random.randrange(-1, 2)
         elif random.randrange(60) % 20:
@@ -217,11 +311,18 @@ def advance_enemy_attacks(game):
 
 
 def advance_game(game):
+    if advance_game_over_state(game):
+        return
+
     advance_resource_refills(game)
+    advance_player_repairs(game)
+    advance_player_cannon_actions(game)
+    advance_player_projectiles(game)
     advance_ai_crew(game)
     advance_pirate_ships(game)
     advance_enemy_attacks(game)
     advance_enemy_projectiles(game)
+    advance_game_over_state(game)
 
 
 def advance_ready_rooms(room_registry=None, now=None, max_steps_per_room=MAX_SIMULATION_STEPS_PER_ADVANCE):
@@ -267,7 +368,11 @@ __all__ = [
     "advance_enemy_attacks",
     "advance_enemy_projectiles",
     "advance_game",
+    "advance_game_over_state",
     "advance_pirate_ships",
+    "advance_player_cannon_actions",
+    "advance_player_projectiles",
+    "advance_player_repairs",
     "advance_ready_rooms",
     "advance_resource_refills",
     "ai_move",

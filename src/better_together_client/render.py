@@ -29,6 +29,7 @@ class RenderRuntime:
     font: object
     hit: list = field(default_factory=list)
     enemy_projectiles: list = field(default_factory=list)
+    player_projectiles: list = field(default_factory=list)
 
 
 _current_runtime = None
@@ -41,10 +42,11 @@ cannonball_icon = None
 font = None
 hit = []
 enemy_projectiles = []
+player_projectiles = []
 
 
 def _set_current_runtime(runtime):
-    global _current_runtime, window, ship, water, aim, wood_icon, cannonball_icon, font, hit, enemy_projectiles
+    global _current_runtime, window, ship, water, aim, wood_icon, cannonball_icon, font, hit, enemy_projectiles, player_projectiles
 
     _current_runtime = runtime
     if runtime is None:
@@ -57,6 +59,7 @@ def _set_current_runtime(runtime):
         font = None
         hit = []
         enemy_projectiles = []
+        player_projectiles = []
         return
 
     window = runtime.window
@@ -68,6 +71,7 @@ def _set_current_runtime(runtime):
     font = runtime.font
     hit = runtime.hit
     enemy_projectiles = runtime.enemy_projectiles
+    player_projectiles = runtime.player_projectiles
 
 
 def get_runtime():
@@ -130,6 +134,9 @@ def refresh(runtime_or_surface, player_me, player_others):
     for enemy_projectile in runtime.enemy_projectiles:
         surface.blit(runtime.cannonball_icon, enemy_projectile)
 
+    for player_projectile in runtime.player_projectiles:
+        surface.blit(runtime.cannonball_icon, player_projectile)
+
     surface.blit(runtime.wood_icon, (10, 20))
     surface.blit(runtime.cannonball_icon, (10, 70))
 
@@ -145,6 +152,7 @@ __all__ = [
     "get_runtime",
     "height",
     "enemy_projectiles",
+    "player_projectiles",
     "hit",
     "initialize_runtime",
     "refresh",

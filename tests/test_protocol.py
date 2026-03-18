@@ -16,7 +16,11 @@ from better_together_shared.asset_catalog import (
 )
 from better_together_shared.protocol import (
     CREW_MEMBER_ENTITY_KIND,
+    DEFAULT_ACTION_STATE,
+    DEFAULT_GAMEPLAY_STATE,
+    DEFAULT_PLAYER_PROJECTILES,
     InvalidPlayerSnapshotError,
+    InvalidProtocolMessageError,
     PIRATE_SHIP_ENTITY_KIND,
     PLAYER_ASSIGNMENT_MESSAGE,
     PLAYER_UPDATE_MESSAGE,
@@ -29,11 +33,15 @@ from better_together_shared.protocol import (
     create_room_state_message,
     create_update_message,
     deserialize_message,
+    extract_action_state,
     extract_assigned_player,
+    extract_assignment_gameplay_state,
     extract_player_update,
     extract_repaired_damage_markers,
     extract_room_state_damage_markers,
     extract_room_state_enemy_projectiles,
+    extract_room_state_gameplay_state,
+    extract_room_state_player_projectiles,
     extract_room_state_self_player,
     is_message_type,
     serialize_message,
@@ -107,9 +115,34 @@ class ProtocolHelperTests(unittest.TestCase):
 
     def test_protocol_messages_round_trip_through_pickle(self):
         snapshot = create_player_snapshot(make_player_like())
+        action_state = {
+            "action_pressed": True,
+            "repair_target": (12, 34),
+            "aim_target": (90, 91),
+        }
+        gameplay_state = {
+            "tick_rate_hz": 20,
+            "game_over": True,
+            "game_over_ticks_remaining": 199,
+            "repair_target": (12, 34),
+            "repair_ticks_remaining": 15,
+            "repair_duration_ticks": 60,
+            "cannon_reload_ticks_remaining": 9,
+            "cannon_reload_duration_ticks": 60,
+        }
 
-        assignment_message = deserialize_message(serialize_message(create_assignment_message(1, 7, snapshot)))
-        update_message = deserialize_message(serialize_message(create_update_message(snapshot, repaired_damage_markers=[(12, 34)])))
+        assignment_message = deserialize_message(
+            serialize_message(create_assignment_message(1, 7, snapshot, gameplay_state=gameplay_state))
+        )
+        update_message = deserialize_message(
+            serialize_message(
+                create_update_message(
+                    snapshot,
+                    repaired_damage_markers=[(12, 34)],
+                    action_state=action_state,
+                )
+            )
+        )
         room_state_message = deserialize_message(
             serialize_message(
                 create_room_state_message(
@@ -118,6 +151,8 @@ class ProtocolHelperTests(unittest.TestCase):
                     self_player=snapshot,
                     damage_markers=[(12, 34), (56, 78)],
                     enemy_projectiles=[(90, 91)],
+                    player_projectiles=[(23, 45)],
+                    gameplay_state=gameplay_state,
                 )
             )
         )
@@ -126,15 +161,19 @@ class ProtocolHelperTests(unittest.TestCase):
         self.assertEqual(assignment_message["player_number"], 1)
         self.assertEqual(assignment_message["room_id"], 7)
         self.assertEqual(extract_assigned_player(assignment_message)["char"], snapshot["char"])
+        self.assertEqual(extract_assignment_gameplay_state(assignment_message), gameplay_state)
 
         self.assertTrue(is_message_type(update_message, PLAYER_UPDATE_MESSAGE))
         self.assertEqual(extract_player_update(update_message)["targetY"], snapshot["targetY"])
         self.assertEqual(extract_repaired_damage_markers(update_message), [(12, 34)])
+        self.assertEqual(extract_action_state(update_message), action_state)
 
         self.assertTrue(is_message_type(room_state_message, ROOM_STATE_MESSAGE))
         self.assertEqual(extract_room_state_self_player(room_state_message)["char"], snapshot["char"])
         self.assertEqual(extract_room_state_damage_markers(room_state_message), [(12, 34), (56, 78)])
         self.assertEqual(extract_room_state_enemy_projectiles(room_state_message), [(90, 91)])
+        self.assertEqual(extract_room_state_player_projectiles(room_state_message), [(23, 45)])
+        self.assertEqual(extract_room_state_gameplay_state(room_state_message), gameplay_state)
         rebuilt_players = create_players_from_room_state(DummyPlayer, room_state_message)
         self.assertEqual(len(rebuilt_players), 1)
         self.assertEqual(rebuilt_players[0].char, snapshot["char"])
@@ -196,12 +235,47 @@ class ProtocolHelperTests(unittest.TestCase):
                 self_player=snapshot,
                 damage_markers=[[10, 20]],
                 enemy_projectiles=[[30, 40]],
+                player_projectiles=[[50, 60]],
             )
         )
 
         self.assertEqual(validated_message["damage_markers"], [(10, 20)])
         self.assertEqual(validated_message["enemy_projectiles"], [(30, 40)])
+        self.assertEqual(validated_message["player_projectiles"], [(50, 60)])
         self.assertEqual(validated_message["self_player"]["char"], snapshot["char"])
+        self.assertEqual(validated_message["gameplay_state"], DEFAULT_GAMEPLAY_STATE)
+
+    def test_validate_message_rejects_non_positive_gameplay_tick_rate(self):
+        snapshot = create_player_snapshot(make_player_like())
+
+        with self.assertRaises(InvalidProtocolMessageError):
+            validate_message(
+                create_room_state_message(
+                    7,
+                    [snapshot],
+                    self_player=snapshot,
+                    gameplay_state={"tick_rate_hz": 0},
+                )
+            )
+
+    def test_extract_action_and_gameplay_state_return_defaults_for_invalid_messages(self):
+        malformed_update_message = {
+            "protocol_version": PROTOCOL_VERSION,
+            "message_type": PLAYER_UPDATE_MESSAGE,
+            "player": create_player_snapshot(make_player_like()),
+            "action_state": {"action_pressed": "yes"},
+        }
+        malformed_room_state_message = {
+            "protocol_version": PROTOCOL_VERSION,
+            "message_type": ROOM_STATE_MESSAGE,
+            "room_id": 7,
+            "entities": [],
+            "gameplay_state": {"tick_rate_hz": 0},
+        }
+
+        self.assertEqual(extract_action_state(malformed_update_message), DEFAULT_ACTION_STATE)
+        self.assertEqual(extract_room_state_gameplay_state(malformed_room_state_message), DEFAULT_GAMEPLAY_STATE)
+        self.assertEqual(extract_room_state_player_projectiles(malformed_room_state_message), list(DEFAULT_PLAYER_PROJECTILES))
 
     def test_shoot_animation_positions_remain_serializable_for_updates(self):
         from better_together_client.game_loop import update_shoot_animation

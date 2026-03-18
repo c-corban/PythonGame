@@ -4,7 +4,6 @@ import threading
 import time
 
 from better_together_shared.protocol import (
-    apply_player_snapshot,
     create_assignment_message,
     create_room_state_message,
 )
@@ -45,16 +44,21 @@ class RoomRegistry:
             if game is None:
                 raise KeyError(game_id)
 
-            return create_assignment_message(player_number, game_id, game.crew_members[player_number])
+            return create_assignment_message(
+                player_number,
+                game_id,
+                game.crew_members[player_number],
+                gameplay_state=game.gameplay_state_for(player_number),
+            )
 
-    def apply_player_update(self, game_id, player_number, player_update_snapshot, repaired_damage_markers=None):
+    def apply_player_update(self, game_id, player_number, player_update_snapshot, repaired_damage_markers=None, action_state=None):
         with self.lock:
             game = self.games.get(game_id)
             if game is None:
                 return False
 
-            game.remove_damage_markers(repaired_damage_markers)
-            apply_player_snapshot(game.crew_members[player_number], player_update_snapshot)
+            game.apply_client_player_snapshot(player_number, player_update_snapshot)
+            game.update_action_state(player_number, action_state)
             return True
 
     def build_room_state_message(self, game_id, player_number):
@@ -69,6 +73,8 @@ class RoomRegistry:
                 self_player=game.crew_members[player_number],
                 damage_markers=game.damage_markers,
                 enemy_projectiles=game.enemy_projectile_positions(),
+                player_projectiles=game.player_projectile_positions(),
+                gameplay_state=game.gameplay_state_for(player_number),
             )
 
     def advance_ready_games(self, advance_game_callback, now=None, max_steps_per_room=MAX_SIMULATION_STEPS_PER_ADVANCE):
@@ -87,6 +93,7 @@ class RoomRegistry:
                 for player_number, ai_controlled in enumerate(game.ai):
                     if ai_controlled:
                         game.ai[player_number] = False
+                        game.clear_action_state(player_number)
                         return player_number, game_id, False
 
             game_id = 0
@@ -101,6 +108,7 @@ class RoomRegistry:
 
             self.games[game_id] = Game(game_id)
             self.games[game_id].ai[0] = False
+            self.games[game_id].clear_action_state(0)
             return 0, game_id, True
 
     def get_other_entities(self, game_id, player_number):
@@ -118,6 +126,7 @@ class RoomRegistry:
                 return False
 
             game.ai[player_number] = True
+            game.clear_action_state(player_number)
             if False not in game.ai:
                 del self.games[game_id]
                 return True
