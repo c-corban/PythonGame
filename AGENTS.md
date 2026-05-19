@@ -14,14 +14,14 @@ For the broader documentation and update-ownership map, start with `docs/knowled
 
 ## Custom agents
 
-- **Runtime Network & Protocol** — use for `player_assignment`, `player_update`, `room_state`, snapshot compatibility, socket framing, protocol versioning, and room-lifecycle-adjacent networking changes.
-- **Runtime Room Lifecycle** — use for room creation, AI slot reuse, matchmaking, disconnect cleanup, and empty-room deletion behavior.
-- **Runtime State Ownership** — use when deciding whether gameplay behavior belongs in the client, server, or shared protocol layer.
-- **Client Gameplay & HUD** — use for prompts, aiming, reload flow, repair interaction text, shoot animation, and game-over presentation.
-- **Client Headless-Safe Runtime** — use for Pygame display setup, image conversion, render initialization, and protecting headless server support.
-- **Runtime Asset Bundle & Pipeline** — use for asset IDs, bundle generation, `build_runtime_assets.py`, mirrored client/server asset helpers, collision-mask assets, and attribution updates.
-- **Delivery & Launch Config** — use for `.env` lookup, `BETTER_TOGETHER_ENV_FILE`, CLI/app entrypoints, macOS launchers, and setup-flow docs.
-- **Repo Change Surface Map** — use as a read-only planning agent to map files, docs, tests, and risks before editing.
+- **Runtime Network & Protocol** — use for `player_assignment`, `player_update`, `room_state`, snapshot compatibility, framed transport / `protocol_version`, and other wire-visible gameplay-state changes; if the wire shape stays stable and the bug is really server-owned simulation, start with **Server Simulation & AI Playbook**; hand off room allocation/reuse/cleanup policy to **Runtime Room Lifecycle**.
+- **Runtime Room Lifecycle** — use for room allocation and reuse, AI slot reuse, disconnect cleanup, room ID reuse, and empty-room deletion behavior; if the issue is pure server simulation cadence without room-policy changes, start with **Server Simulation & AI Playbook**.
+- **Runtime State Ownership** — use when deciding whether behavior belongs in client presentation, server simulation, or shared helper/protocol code, especially before shifting authority across that boundary.
+- **Client Gameplay & HUD** — use for prompts/HUD, aim presentation, repair/cannon prompt text, shoot animation, game-over overlays, and other `GameplaySessionState` / `RenderRuntime` client gameplay polish driven by authoritative state.
+- **Client Headless-Safe Runtime** — use for Pygame display setup, image conversion, mirrored client/server asset loading, render initialization, and protecting headless server support.
+- **Runtime Asset Bundle & Pipeline** — use for asset IDs, bundle generation, `build_runtime_assets.py`, mirrored client/server asset loaders/helpers, collision-mask assets, and other runtime asset/pipeline changes; route attribution-only follow-up through the narrower prompt/docs path.
+- **Delivery & Launch Config** — use for canonical entrypoints, `pyproject.toml` / installed console scripts, `.env` lookup, `BETTER_TOGETHER_ENV_FILE`, runtime-role startup flow, macOS launchers, and setup-flow docs.
+- **Repo Change Surface Map** — use as a read-only planning agent to map files, docs, tests, risks, and likely next workflow before editing, especially across risky client/server/shared boundaries.
 
 ## Instruction files
 

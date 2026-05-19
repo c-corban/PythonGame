@@ -3,7 +3,7 @@
 ## Client-owned today
 
 - Opening the gameplay window, collecting input, moving the local crew member, and drawing the ship, water, UI, projectiles, and other entities.
-- Repair prompts, cannon prompts, local cooldowns, pending repaired damage markers, and game-over display logic.
+- Prompt/HUD presentation, local cannon aim placement while holding `SPACE`, movement-hint/session state, and client-only overlay or shoot-animation presentation that follows authoritative server state.
 - Key files:
   - `src/better_together_client/game_loop.py`
   - `src/better_together_client/session.py`
@@ -22,7 +22,7 @@
 
 ## Server-owned today
 
-- Room membership, slot assignment/release, AI movement, pirate ship updates, damage markers, active enemy projectiles, stored crew state, and server-side simulation timing.
+- Room membership, slot assignment/release, stored crew state, AI movement, pirate ship updates, damage markers, enemy projectile flight, player-fired projectile flight and hits, resource refills, authoritative repair timing/wood use, authoritative cannon reload and fire acceptance, authoritative game-over state/countdown, and server-side simulation timing.
 - Key files:
   - `src/better_together_server/room_manager.py`
   - `src/better_together_server/game.py`
@@ -34,6 +34,11 @@
   - `build_room_state_message()`
   - `assign_player_slot()`
   - `release_player_slot()`
+  - `advance_game()`
+  - `advance_game_over_state()`
+  - `advance_player_repairs()`
+  - `advance_player_cannon_actions()`
+  - `advance_player_projectiles()`
   - `advance_ready_games()`
   - `advance_ready_rooms()`
 
@@ -45,13 +50,15 @@
 
 ## Triage questions
 
-- Is the symptom only a local prompt, HUD string, or timer? It is probably client-owned.
+- Is the symptom only a local prompt, HUD string, aim reticle, or overlay presentation? It is probably client-owned.
+- Is the displayed repair/reload/game-over countdown or progression wrong? Include server gameplay state, not just client HUD code.
 - Does another player see the effect or depend on it? Include server/shared code too.
 - Does it change fields sent over the wire or the shape of `player_assignment`, `player_update`, or `room_state`? Include shared protocol and both runtime halves.
-- Does it affect room membership, AI slot reuse, damage markers, or enemy projectiles? Include server room/game/network modules.
+- Does it affect room membership, AI slot reuse, damage markers, projectile flight, repair/reload flow, or game-over progression? Include server room/game/network modules.
 
 ## Common traps
 
+- Treating repair/reload countdowns or `Game Over` state as local just because the client renders them.
 - Expanding client-owned logic without checking whether the server already echoes authoritative state back.
-- Forgetting that `room_state` also carries `self_player`, `damage_markers`, and `enemy_projectiles`.
+- Forgetting that `room_state` also carries `self_player`, `damage_markers`, `enemy_projectiles`, `player_projectiles`, and gameplay state.
 - Treating pirate ships as separate from the normal entity reply shape; the client still receives and renders them through that same payload.

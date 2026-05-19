@@ -39,7 +39,7 @@ The prototype already captures the “cooperate under pressure” spirit, but it
 | --- | --- | --- |
 | Core activity | Multiple task types that must be prioritized | Ship movement, repair, cannon use, and pirate-ship pressure |
 | Failure condition | Poor organization / wrong prioritization | Too many unrepaired hit markers on the ship (currently 30) |
-| Victory condition | Survive a fixed amount of time | No full victory loop is currently implemented; matches currently end through client-side `Game Over` handling |
+| Victory condition | Survive a fixed amount of time | No full victory loop is currently implemented; the current match-over flow is server-authoritative `Game Over` state/countdown that the client renders |
 | AI fallback | AI replaces disconnected players and adjusts in strength | AI replaces disconnected players with lightweight wandering crew behavior; pirate ships, attacks, and refill timing remain server-driven |
 | Parallel matches | New rooms open when existing ones are full of humans | Implemented through room allocation in `src/better_together_server/room_manager.py`, with room IDs reused once empty rooms are deleted |
 | Task collaboration | Helping another player accelerates shared tasks | Not yet represented as a generalized task system |
